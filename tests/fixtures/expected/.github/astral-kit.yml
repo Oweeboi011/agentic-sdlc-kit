@@ -1,0 +1,5 @@
+kit: v0
+runtimes: [copilot, claude-code]
+stack: [python]
+gate: python tools/harness.py ci
+agents: [planner, coder]

@@ -1,12 +1,12 @@
-"""Find kit content both in a source checkout (repo root) and in an installed wheel (inside the package)."""
+"""Find kit content in a source checkout (repo root) or an installed wheel (inside the package)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parent
+KIT_ROOT = PACKAGE if (PACKAGE / "schemas").is_dir() else PACKAGE.parent
 
 
 def kit_dir(name: str) -> Path:
-    installed = PACKAGE / name
-    return installed if installed.is_dir() else PACKAGE.parent / name
+    return KIT_ROOT / name

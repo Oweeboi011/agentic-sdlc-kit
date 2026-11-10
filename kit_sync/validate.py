@@ -68,6 +68,14 @@ def _name_matches(data: dict[str, Any], expected: str, where: str, of: str) -> l
     return [] if name == expected else [Problem(where, f"name {name!r} must match the {of} {expected!r}")]
 
 
+def _mcp_problems(path: Path, where: str) -> list[Problem]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [Problem(where, f"invalid JSON: {exc}")]
+    return [] if isinstance(data, dict) else [Problem(where, "must be a JSON object (one server definition)")]
+
+
 def kit_agents(kit: Path) -> set[str]:
     return {p.stem for p in (kit / "agents").glob("*.md")}
 
@@ -82,7 +90,11 @@ def validate_kit(kit: Path) -> list[Problem]:
         problems += found
         if data is not None:
             problems += _name_matches(data, path.parent.name, where, "folder")
+    for path in sorted((kit / "instructions").glob("*.md")):
+        problems += _load(path, "instruction", path.relative_to(kit).as_posix())[1]
     servers = {p.stem for p in (kit / "mcp").glob("*.json")}
+    for name in sorted(servers):
+        problems += _mcp_problems(kit / "mcp" / f"{name}.json", f"mcp/{name}.json")
     for path in sorted((kit / "agents").glob("*.md")):
         where = path.relative_to(kit).as_posix()
         data, found = _load(path, "agent", where)

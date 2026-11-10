@@ -6,15 +6,32 @@ Design: [ADR-0014](https://github.com/ava-innersource/icoe-astral-ai/blob/main/d
 
 ## Status
 
-v0.1 in progress. Done: skeleton (K1), schemas and validator (K2). Rendering, content and reusable workflows land item by item (K3–K8 in the plan).
+v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3). Content, reusable workflows and the sample project land next (K4–K8 in the plan).
 
 ## Use
 
+From the project root, with a `.github/astral-kit.yml`:
+
 ```bash
-pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync --validate --project .
+pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync           # render
+pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync --check   # CI: exit 1 on drift
 ```
 
-`v0` is a moving tag on the newest `v0.x.y` release.
+`v0` is a moving tag on the newest `v0.x.y` release. `--validate` checks the kit (and `--project` config) only.
+
+## What it renders
+
+| Kit source | Copilot | Claude Code |
+|---|---|---|
+| `agents/<n>.md` (enabled in the config) | `.github/agents/<n>.agent.md` (tool aliases, `mcp-servers`) | `.claude/agents/<n>.md` (Claude tool names, `skills`, `mcpServers`) |
+| `skills/<n>/SKILL.md` (used by an enabled agent) | `.github/skills/<n>/SKILL.md`, only when Claude Code is off | `.claude/skills/<n>/SKILL.md` (Copilot reads this folder too) |
+| `instructions/<n>.md` (matching the stack) | `.github/instructions/<n>.instructions.md` (`applyTo`) | same files, listed in `AGENTS.md`; `applyTo: "**"` ones imported |
+| kit rules + project gate | `AGENTS.md` | `.claude/CLAUDE.md` imports `@../AGENTS.md` |
+
+- Every generated file carries a marker with the kit version and a sha256 of its content (after the frontmatter, which must stay on line 1). `--check` reports `missing`, `out of date`, `hand-edited` and `no longer rendered` files.
+- Project text goes below the `<!-- project -->` line in `AGENTS.md` and `.claude/CLAUDE.md`; it is never touched. An existing hand-written `AGENTS.md` is adopted as that section.
+- A file at a generated path without the marker belongs to the project: `kit-sync` writes nothing and reports the conflict.
+- Formats were pinned on 2026-11-10 from the GitHub Copilot and Claude Code docs; they live only in `kit_sync/layouts.py`.
 
 ## Schemas
 
