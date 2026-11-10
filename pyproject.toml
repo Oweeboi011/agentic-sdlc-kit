@@ -9,7 +9,7 @@ description = "Renders agents, skills and instructions for GitHub Copilot and Cl
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["pyyaml>=6", "jsonschema>=4.23"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.8"]
@@ -18,7 +18,13 @@ dev = ["pytest>=8", "ruff>=0.8"]
 kit-sync = "kit_sync.cli:main"
 
 [tool.setuptools]
-packages = ["kit_sync"]
+packages = ["kit_sync", "kit_sync.schemas"]
+
+[tool.setuptools.package-dir]
+"kit_sync.schemas" = "schemas"
+
+[tool.setuptools.package-data]
+"kit_sync.schemas" = ["*.json"]
 
 [tool.ruff]
 line-length = 110

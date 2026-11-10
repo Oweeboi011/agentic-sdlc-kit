@@ -31,6 +31,7 @@ jobs:
       - run: python -m ruff format --check .
       - run: python -m pytest -q
       - run: kit-sync --version
+      - run: kit-sync --validate
 
   actionlint:
     name: actionlint

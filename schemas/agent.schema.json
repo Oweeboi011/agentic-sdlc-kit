@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ava-innersource/agentic-sdlc-kit/schemas/agent.schema.json",
+  "title": "Canonical agent spec (frontmatter of agents/<name>.md)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "description", "stage", "triggers", "tools", "permissions", "human_gate"],
+  "properties": {
+    "name": {
+      "description": "Agent id; must match the file name.",
+      "$ref": "#/$defs/id"
+    },
+    "description": {
+      "description": "When to use this agent. Both runtimes show it to pick the agent.",
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1024
+    },
+    "stage": {
+      "description": "SDLC stage 1-8: 1 Backlog & Plan, 2 Code, 3 Review & Secure, 4 Build & Test, 5 Release & Deploy, 6 Run & Observe, 7 User Feedback, 8 Learn & Re-prioritise.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8
+    },
+    "triggers": {
+      "description": "What starts the agent.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(manual|label:[A-Za-z0-9:._-]+|pull_request:(opened|synchronize|ready_for_review|review_requested)|issues:(opened|labeled)|schedule:[0-9*/,\\- ]+|comment:/[a-z][a-z0-9-]*)$"
+      }
+    },
+    "skills": {
+      "description": "Skills the agent loads; each must exist under skills/<name>/SKILL.md.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" },
+      "default": []
+    },
+    "tools": {
+      "description": "Runtime-neutral tool groups; kit-sync maps them to Copilot and Claude Code names.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["read", "search", "edit", "execute", "todo", "web", "agent"] }
+    },
+    "mcp": {
+      "description": "MCP servers the agent uses; each must exist as mcp/<name>.json.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" },
+      "default": []
+    },
+    "permissions": {
+      "description": "GITHUB_TOKEN scopes for the agent's workflow. Omitted scopes are none.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "contents": { "$ref": "#/$defs/access" },
+        "issues": { "$ref": "#/$defs/access" },
+        "pull-requests": { "$ref": "#/$defs/access" },
+        "checks": { "$ref": "#/$defs/access" },
+        "actions": { "$ref": "#/$defs/access" },
+        "deployments": { "enum": ["none", "read"] },
+        "security-events": { "enum": ["none", "read"] }
+      }
+    },
+    "human_gate": {
+      "description": "Who confirms the agent's output before it takes effect (ADR-0007, ADR-0014).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "reviewer"],
+      "properties": {
+        "mode": {
+          "description": "v0.1 ships propose-only: comments, draft PRs, proposed rollbacks. Wider modes come per stage on agent-quality evidence.",
+          "enum": ["propose"]
+        },
+        "reviewer": {
+          "description": "Role that confirms, e.g. CODEOWNER, product owner, on-call.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$", "maxLength": 64 },
+    "access": { "enum": ["none", "read", "write"] }
+  }
+}

@@ -6,15 +6,25 @@ Design: [ADR-0014](https://github.com/ava-innersource/icoe-astral-ai/blob/main/d
 
 ## Status
 
-v0.1 in progress. This release has the skeleton only: CI, the release flow and the `kit-sync` entry point. Rendering, content and reusable workflows land item by item (K2–K8 in the plan).
+v0.1 in progress. Done: skeleton (K1), schemas and validator (K2). Rendering, content and reusable workflows land item by item (K3–K8 in the plan).
 
 ## Use
 
 ```bash
-pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync --version
+pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync --validate --project .
 ```
 
 `v0` is a moving tag on the newest `v0.x.y` release.
+
+## Schemas
+
+| Schema | Validates |
+|---|---|
+| `schemas/agent.schema.json` | frontmatter of `agents/<name>.md`: `name`, `description`, `stage` (1–8), `triggers`, `skills`, `tools` (`read search edit execute todo web agent`), `mcp`, `permissions` (`GITHUB_TOKEN` scopes), `human_gate` (`mode: propose`, `reviewer`) |
+| `schemas/skill.schema.json` | frontmatter of `skills/<name>/SKILL.md`: `name` (matches the folder, `a-z0-9-`, ≤64), `description` (≤1024) |
+| `schemas/astral-kit.schema.json` | a project's `.github/astral-kit.yml`: `kit` (`v0` or `v0.1.0`), `runtimes` (`copilot`, `claude-code`), `stack`, `gate` (the project's own quality command), `agents`, optional `deploy` |
+
+`kit-sync --validate` also checks that names match their file or folder and that every referenced skill, MCP server and agent exists in the kit.
 
 ## Develop
 
