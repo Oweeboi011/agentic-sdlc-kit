@@ -6,7 +6,7 @@ Design: [ADR-0014](https://github.com/ava-innersource/icoe-astral-ai/blob/main/d
 
 ## Status
 
-v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3). Content, reusable workflows and the sample project land next (K4–K8 in the plan).
+v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 9 skills, 5 instructions, 3 MCP templates). Reusable workflows, templates and the sample project land next (K5–K8 in the plan).
 
 ## Use
 

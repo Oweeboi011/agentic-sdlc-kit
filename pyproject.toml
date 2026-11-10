@@ -18,13 +18,29 @@ dev = ["pytest>=8", "ruff>=0.8"]
 kit-sync = "kit_sync.cli:main"
 
 [tool.setuptools]
-packages = ["kit_sync", "kit_sync.schemas"]
+packages = [
+    "kit_sync",
+    "kit_sync.schemas",
+    "kit_sync.agents",
+    "kit_sync.skills",
+    "kit_sync.instructions",
+    "kit_sync.mcp",
+]
 
+# Kit content ships inside the package so `pipx run` finds it (kit_sync/paths.py).
 [tool.setuptools.package-dir]
 "kit_sync.schemas" = "schemas"
+"kit_sync.agents" = "agents"
+"kit_sync.skills" = "skills"
+"kit_sync.instructions" = "instructions"
+"kit_sync.mcp" = "mcp"
 
 [tool.setuptools.package-data]
 "kit_sync.schemas" = ["*.json"]
+"kit_sync.agents" = ["*.md"]
+"kit_sync.skills" = ["*/SKILL.md"]
+"kit_sync.instructions" = ["*.md"]
+"kit_sync.mcp" = ["*.json"]
 
 [tool.ruff]
 line-length = 110

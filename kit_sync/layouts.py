@@ -6,6 +6,7 @@ and code.claude.com sub-agents, skills, memory.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import yaml
@@ -21,6 +22,8 @@ CLAUDE_TOOLS = {
     "web": ["WebFetch", "WebSearch"],
     "agent": ["Agent"],
 }
+COPILOT_BUILTIN_MCP = frozenset({"github", "playwright"})
+_SECRET = re.compile(r"^\$\{([A-Z][A-Z0-9_]*)\}$")
 
 
 class _Dumper(yaml.SafeDumper):
@@ -58,6 +61,12 @@ def _body(agent: Doc) -> str:
     return agent.body.rstrip("\n") + "\n" + _footer(agent)
 
 
+def _copilot_server(server: dict[str, Any]) -> dict[str, Any]:
+    """`${NAME}` env values become Copilot secrets, which must carry the COPILOT_MCP_ prefix."""
+    env = {k: _SECRET.sub(r"${{ secrets.COPILOT_MCP_\1 }}", v) for k, v in server.get("env", {}).items()}
+    return {**server, "env": env} if env else server
+
+
 def copilot_agent(agent: Doc, kit: Kit) -> tuple[str, str]:
     servers = agent.meta.get("mcp", [])
     meta: dict[str, Any] = {
@@ -65,8 +74,9 @@ def copilot_agent(agent: Doc, kit: Kit) -> tuple[str, str]:
         "description": agent.meta["description"],
         "tools": [*agent.meta["tools"], *(f"{m}/*" for m in servers)],
     }
-    if servers:
-        meta["mcp-servers"] = {m: kit.mcp[m] for m in servers}
+    custom = {m: _copilot_server(kit.mcp[m]) for m in servers if m not in COPILOT_BUILTIN_MCP}
+    if custom:
+        meta["mcp-servers"] = custom
     return f".github/agents/{agent.name}.agent.md", with_frontmatter(meta, _body(agent))
 
 

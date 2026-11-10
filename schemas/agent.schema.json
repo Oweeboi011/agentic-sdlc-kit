@@ -29,7 +29,7 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "pattern": "^(manual|label:[A-Za-z0-9:._-]+|pull_request:(opened|synchronize|ready_for_review|review_requested)|issues:(opened|labeled)|schedule:[0-9*/,\\- ]+|comment:/[a-z][a-z0-9-]*)$"
+        "pattern": "^(manual|label:[A-Za-z0-9:._-]+|pull_request:(opened|synchronize|ready_for_review|review_requested)|issues:(opened|labeled)|schedule:[0-9*/,\\- ]+|comment:/[a-z][a-z0-9-]*|repository_dispatch:[a-z][a-z0-9-]*)$"
       }
     },
     "skills": {
