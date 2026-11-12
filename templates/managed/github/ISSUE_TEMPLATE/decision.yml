@@ -1,0 +1,18 @@
+name: Decision needed
+description: An open question from a spec ([NEEDS CLARIFICATION]) or a review. A code owner decides, then the spec is updated.
+labels: ["needs-decision"]
+body:
+  - type: input
+    id: spec
+    attributes: { label: Spec and requirement, description: "Path and ID, e.g. specs/001-sign-in/spec.md FR-003" }
+    validations: { required: true }
+  - type: textarea
+    id: question
+    attributes: { label: Question, description: The open question and what it blocks. }
+    validations: { required: true }
+  - type: textarea
+    id: options
+    attributes: { label: Options, description: Choices considered, with trade-offs. }
+  - type: textarea
+    id: decision
+    attributes: { label: Decision, description: Filled in by the code owner who decides. }

@@ -1,4 +1,4 @@
-"""`kit-sync`: render kit agents, skills and instructions into a project; `--check` fails on drift."""
+"""`kit-sync`: render kit agents, skills, instructions and templates; `--check` fails on drift."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from kit_sync import __version__
-from kit_sync.kit import load_config, load_kit
+from kit_sync.kit import load_config, load_files, load_kit
 from kit_sync.paths import KIT_ROOT
-from kit_sync.render import render
-from kit_sync.sync import apply, plan
+from kit_sync.render import fill, render
+from kit_sync.sync import apply, plan, write_starters
 from kit_sync.validate import validate_config, validate_kit
 
 
@@ -20,6 +20,9 @@ def build_parser() -> argparse.ArgumentParser:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--check", action="store_true", help="exit 1 if rendered files are missing, stale or edited"
+    )
+    mode.add_argument(
+        "--init", action="store_true", help="also write starter files the project lacks (then project-owned)"
     )
     mode.add_argument(
         "--validate", action="store_true", help="only validate kit content (and --project config)"
@@ -56,4 +59,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if conflicts:
         return _report(conflicts, "", "{} conflict(s); nothing written")
     apply(project, changes)
+    if args.init:
+        config = load_config(project)
+        starters = load_files(args.kit / "templates" / "starters")
+        created, kept = write_starters(project, {rel: fill(text, config) for rel, text in starters.items()})
+        for line in [f"{rel}: created" for rel in created] + [f"{rel}: kept (project-owned)" for rel in kept]:
+            print(line)
     return _report([], f"{len(changes)} file(s) updated, {len(rendered)} rendered", "")

@@ -36,6 +36,12 @@
       "uniqueItems": true,
       "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" }
     },
+    "templates": {
+      "description": "Kit-managed template groups to render; default: all.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["issue-forms", "pr-template", "githooks"] }
+    },
     "deploy": {
       "type": "object",
       "additionalProperties": false,

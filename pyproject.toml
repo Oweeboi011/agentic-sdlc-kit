@@ -25,6 +25,9 @@ packages = [
     "kit_sync.skills",
     "kit_sync.instructions",
     "kit_sync.mcp",
+    "kit_sync.templates",
+    "kit_sync.policies",
+    "kit_sync.presets",
 ]
 
 # Kit content ships inside the package so `pipx run` finds it (kit_sync/paths.py).
@@ -34,6 +37,9 @@ packages = [
 "kit_sync.skills" = "skills"
 "kit_sync.instructions" = "instructions"
 "kit_sync.mcp" = "mcp"
+"kit_sync.templates" = "templates"
+"kit_sync.policies" = "policies"
+"kit_sync.presets" = "presets"
 
 [tool.setuptools.package-data]
 "kit_sync.schemas" = ["*.json"]
@@ -41,6 +47,9 @@ packages = [
 "kit_sync.skills" = ["*/SKILL.md"]
 "kit_sync.instructions" = ["*.md"]
 "kit_sync.mcp" = ["*.json"]
+"kit_sync.templates" = ["**/*"]
+"kit_sync.policies" = ["*.json"]
+"kit_sync.presets" = ["**/*"]
 
 [tool.ruff]
 line-length = 110

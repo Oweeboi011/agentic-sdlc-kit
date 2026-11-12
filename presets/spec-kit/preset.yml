@@ -1,0 +1,26 @@
+schema_version: "1.0"
+preset:
+  id: agentic-sdlc
+  name: Agentic SDLC org preset
+  version: "0.0.0"
+  description: >-
+    Adds non-functional, security, data-handling and traceability sections to specs, and a constitution
+    generated from the agentic SDLC kit's instructions (ADR-0024).
+  author: Avanade CoE AI Governance Practice
+  repository: https://github.com/ava-innersource/agentic-sdlc-kit
+  license: MIT
+requires:
+  speckit_version: "~=1.4.0"
+provides:
+  templates:
+    - type: template
+      name: spec-template
+      file: templates/spec-addendum.md
+      strategy: append
+      description: Non-functional, security, data-handling and traceability sections
+    - type: template
+      name: constitution-template
+      file: templates/constitution-template.md
+      strategy: replace
+      description: Constitution generated from the kit's instructions/
+tags: [governance, security, traceability]

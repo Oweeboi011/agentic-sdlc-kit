@@ -1,0 +1,11 @@
+name: User feedback
+description: Feedback from users (stage 7). The Feedback agent clusters these weekly into backlog Issues.
+labels: ["feedback"]
+body:
+  - type: textarea
+    id: feedback
+    attributes: { label: Feedback }
+    validations: { required: true }
+  - type: input
+    id: where
+    attributes: { label: Where in the app, description: Page or feature. }

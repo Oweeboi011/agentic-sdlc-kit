@@ -71,7 +71,7 @@ def test_copilot_uses_builtin_github_and_maps_secrets_for_custom_servers():
 
 def test_wheel_package_data_covers_all_content():
     pyproject = (KIT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    for folder in ("schemas", "agents", "skills", "instructions", "mcp"):
+    for folder in ("schemas", "agents", "skills", "instructions", "mcp", "templates", "policies", "presets"):
         assert f'"kit_sync.{folder}" = "{folder}"' in pyproject
         assert (KIT_ROOT / folder).is_dir()
 
