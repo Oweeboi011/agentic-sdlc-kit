@@ -8,5 +8,6 @@ tools: [read, search]
 mcp: [github]
 permissions: {issues: write, contents: read}
 human_gate: {mode: propose, reviewer: product owner}
+evidence: {kind: issue_comment, label: "agent:planner", trigger: label:needs-refinement}
 ---
 Read the issue and linked code. Propose a story: goal, acceptance criteria, test notes.

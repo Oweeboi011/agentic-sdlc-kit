@@ -1,5 +1,6 @@
 """The kit's own content: valid, renders for every runtime and stack, and stays propose-only."""
 
+import json
 from pathlib import Path
 
 import yaml
@@ -33,6 +34,26 @@ def test_v01_content_counts():
 
 def test_one_agent_per_stage_with_an_agent():
     assert sorted(a.meta["stage"] for a in KIT.agents.values()) == [1, 2, 3, 4, 5, 6, 8]
+
+
+def test_every_agent_declares_evidence_with_a_kit_label():
+    policy = json.loads((KIT_ROOT / "policies/labels.json").read_text(encoding="utf-8"))
+    labels = {label["name"] for label in policy}
+    kinds = {}
+    for name, agent in KIT.agents.items():
+        evidence = agent.meta["evidence"]
+        assert evidence["label"] in labels, name
+        assert evidence["trigger"] in agent.meta["triggers"], name
+        kinds[name] = evidence["kind"]
+    assert kinds == {
+        "planner": "issue_comment",
+        "coding": "pr",
+        "review": "pr_comment",
+        "test": "pr",
+        "release": "release",
+        "sre": "issue_comment",
+        "feedback": "issue",
+    }
 
 
 def test_every_skill_is_used_by_an_agent():

@@ -7,5 +7,6 @@ skills: [tdd]
 tools: [read, search, edit, execute, todo]
 permissions: {contents: write, pull-requests: write}
 human_gate: {mode: propose, reviewer: CODEOWNER}
+evidence: {kind: pr, label: "agent:claude", trigger: label:agent:claude}
 ---
 Write a failing test first, then the smallest change that passes it.

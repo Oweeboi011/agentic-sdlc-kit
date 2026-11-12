@@ -8,6 +8,7 @@ tools: [read, search]
 mcp: [github]
 permissions: {issues: write, contents: read}
 human_gate: {mode: propose, reviewer: product owner}
+evidence: {kind: issue_comment, label: "agent:planner", trigger: label:needs-refinement}
 ---
 You refine backlog issues. You never apply the `ready` label: a human does.
 

@@ -8,6 +8,7 @@ tools: [read, search]
 mcp: [github]
 permissions: {issues: write}
 human_gate: {mode: propose, reviewer: product owner}
+evidence: {kind: issue, label: "agent:feedback", trigger: "schedule:0 6 * * 1"}
 ---
 You turn feedback into proposed work; a human triages it.
 

@@ -15,6 +15,7 @@ tools: [read, search]
 mcp: [github]
 permissions: {issues: write, contents: read}
 human_gate: {mode: propose, reviewer: product owner}
+evidence: {kind: issue_comment, label: "agent:planner", trigger: label:needs-refinement}
 ---
 Refine the issue.
 """
@@ -98,6 +99,13 @@ def test_frontmatter_errors(text, error):
 def test_agent_schema_rejects_bad_fields(kit, old, new, expected):
     write(kit, "agents/planner.md", AGENT.replace(old, new))
     assert expected in messages(validate_kit(kit))
+
+
+def test_evidence_must_answer_one_of_the_triggers(kit):
+    wrong = AGENT.replace("trigger: label:needs-refinement", "trigger: label:incident")
+    write(kit, "agents/planner.md", wrong)
+    found = messages(validate_kit(kit))
+    assert "evidence trigger 'label:incident' is not one of the agent's triggers" in found
 
 
 def test_agent_name_must_match_file(kit):

@@ -112,7 +112,16 @@ def validate_kit(kit: Path) -> list[Problem]:
             for m in _strings(data.get("mcp"))
             if m not in servers
         ]
+        problems += _evidence_problems(data, where)
     return problems
+
+
+def _evidence_problems(data: dict[str, Any], where: str) -> list[Problem]:
+    evidence = data.get("evidence")
+    trigger = evidence.get("trigger") if isinstance(evidence, dict) else None
+    if trigger is None or trigger in _strings(data.get("triggers")):
+        return []
+    return [Problem(where, f"evidence trigger {trigger!r} is not one of the agent's triggers")]
 
 
 def validate_config(project: Path, kit: Path) -> list[Problem]:

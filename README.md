@@ -64,19 +64,25 @@ jobs:
 
 ## Agent workflows
 
-Propose-only agents on [Claude Code Action](https://github.com/anthropics/claude-code-action) (pinned to v1.0.271 by SHA). The `agents.yml` starter calls them on labels; both also run by hand (`workflow_dispatch`).
+Propose-only agents on [Claude Code Action](https://github.com/anthropics/claude-code-action) (pinned to v1.0.271 by SHA), one per kit agent. The `agents.yml` starter calls them on their triggers; all run by hand too (`workflow_dispatch`).
 
-| Workflow | Trigger (starter) | Does | Caller grants |
-|---|---|---|---|
-| `planner` | label `needs-refinement` | Follows `.claude/agents/planner.md`: posts one refinement comment. Tools: read, `gh issue view`, `gh issue comment` only. A human applies `ready` | `contents: read`, `issues: write`, `id-token: write` |
-| `claude-code` | label `agent:claude` | Follows `.claude/agents/coding.md` on branch `agent/issue-<N>`: test-first change, project gate, signed-off commits, **draft** PR with `Closes #N` | `contents: write`, `pull-requests: write`, `issues: read`, `id-token: write` |
+| Workflow | Trigger (starter) | Does | Evidence | Caller grants |
+|---|---|---|---|---|
+| `planner` | label `needs-refinement` | Follows `.claude/agents/planner.md`: one refinement comment. Tools: read, `gh issue view`, `gh issue comment`. A human applies `ready` | Issue comment | `contents: read`, `issues: write`, `id-token: write` |
+| `claude-code` | label `agent:claude` | Follows `.claude/agents/coding.md` on `agent/issue-<N>`: test-first change, project gate, signed-off commits, **draft** PR with `Closes #N` | draft PR, `agent:claude` | `contents: write`, `pull-requests: write`, `issues: read`, `id-token: write` |
+| `review` | PR opened or pushed (same repo) | One comment: `**Verdict:** ready` or `needs changes`, then ranked `file:line` findings. Tools: read, `gh pr view|diff|comment`, `git diff|log`; runs no PR code, never approves | PR comment | `contents: read`, `pull-requests: write`, `id-token: write` |
+| `test` | label `agent:tests` (Issue or PR) | Adds tests on `agent/tests-<N>` as a **draft** PR (into the PR's branch for a PR). Guard fails on any changed file outside `test-files` | draft PR, `agent:tests` | `contents: write`, `pull-requests: write`, `issues: read`, `id-token: write` |
+| `sre` | label `incident`, `repository_dispatch: alert` | Opens or reuses an `incident` Issue for an alert, then one triage comment: impact, timeline, KQL with results, probable cause, proposed mitigation or rollback. Azure read-only via the `environment` identity | Issue comment | `contents: read`, `issues: write`, `actions: read`, `deployments: read`, `id-token: write` |
+| `feedback` | Mondays 06:00 UTC | Clusters `feedback` Issues of the last `days` into at most `max-issues` (5) Issues labelled `from-feedback` + `needs-refinement`; a guard closes any over the cap | Issues, `agent:feedback` | `contents: read`, `issues: write`, `id-token: write` |
+| `release-agent` | by hand, `tag` | A **draft** release: notes by change type, risks, rollback plan. A guard turns anything it published back into a draft | draft release | `contents: write`, `pull-requests: read`, `deployments: read`, `id-token: write` |
 
-- **Propose-only by construction.** `claude-code` denies `gh pr merge`, `gh pr review`, `gh pr ready` and force pushes. A guard step runs after the agent: it turns a non-draft PR back into a draft, and fails the run (with a PR comment) if any commit lacks a `Signed-off-by` matching its author (DCO, plan R-07). The default branch must carry `policies/ruleset-main.json`, so the agent can't push to it.
+- **Propose-only by construction.** `claude-code` and `test` deny `gh pr merge`, `gh pr review`, `gh pr ready` and force pushes. A guard step runs after the agent: it turns a non-draft PR back into a draft, and fails the run (with a PR comment) if any commit lacks a `Signed-off-by` matching its author (DCO, plan R-07). The default branch must carry `policies/ruleset-main.json`, so the agent can't push to it. Comment agents get an allow list with no edit tools.
+- **Evidence (ADR-0026).** Each agent's frontmatter declares `evidence` (`kind`, `label`, `trigger`). After the agent, `if: always()`, the workflow runs `.github/actions/agent-evidence`: it appends `<!-- agentic-sdlc-kit agent=<name> kit=<ver> run=<run_id> model=<model> -->` to every bot-authored output created during the run, puts the agent label on PRs and Issues, and writes the step summary and outputs `count` and `evidence-url`. The workflow, not the model, adds it, so prompt drift can't drop or forge it. ASTRAL reads the markers to show per agent whether it is installed, ran, produced its output and was accepted.
 - **Claude endpoint** (plan A-03): `provider: anthropic` with secret `anthropic-api-key`, or `provider: foundry` with `foundry-base-url`, `model` (the Foundry deployment) and an `environment` whose vars hold `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` (OIDC, no stored key).
-- **CI on agent PRs needs a GitHub App** (ADR-0016): GitHub starts no workflows for pushes or PRs made with `GITHUB_TOKEN`. Pass secrets `app-id` and `app-private-key` to `claude-code`; it mints a short-lived App token (contents and pull requests write, issues read) for the push, the PR and the guard. Without them the draft PR opens but CI waits until a human pushes or re-runs it.
-- Issue text is passed as data, never as instructions. The action only runs for actors with write access.
-- Toolchain for the gate: `python-version`, `node-version`, `install` (as in `ci-python`).
-- Both need the agents rendered first (`kit-sync` with `planner` and `coding` in `agents`).
+- **CI on agent PRs needs a GitHub App** (ADR-0016): GitHub starts no workflows for pushes or PRs made with `GITHUB_TOKEN`. Pass secrets `app-id` and `app-private-key` to `claude-code` and `test`; they mint a short-lived App token (contents and pull requests write, issues read) for the push, the PR and the guard. Without them the draft PR opens but CI waits until a human pushes or re-runs it. The same applies to Issues the feedback agent opens: the planner starts on them only when a human re-applies `needs-refinement`.
+- Issue, PR and alert text is passed as data, never as instructions. The action only runs for actors with write access.
+- Toolchain for the gate (`claude-code`, `test`): `python-version`, `node-version`, `install` (as in `ci-python`).
+- Each needs its agent rendered first (`kit-sync` with the agent in `agents`).
 
 ## Templates, starters and policies
 
@@ -133,11 +139,11 @@ Project text in its `AGENTS.md` (below `<!-- project -->`) and its starters are 
 
 | Schema | Validates |
 |---|---|
-| `schemas/agent.schema.json` | frontmatter of `agents/<name>.md`: `name`, `description`, `stage` (1–8), `triggers`, `skills`, `tools` (`read search edit execute todo web agent`), `mcp`, `permissions` (`GITHUB_TOKEN` scopes), `human_gate` (`mode: propose`, `reviewer`) |
+| `schemas/agent.schema.json` | frontmatter of `agents/<name>.md`: `name`, `description`, `stage` (1–8), `triggers`, `skills`, `tools` (`read search edit execute todo web agent`), `mcp`, `permissions` (`GITHUB_TOKEN` scopes), `human_gate` (`mode: propose`, `reviewer`), `evidence` (`kind`, `label`, `trigger`: what the agent leaves behind, ADR-0026) |
 | `schemas/skill.schema.json` | frontmatter of `skills/<name>/SKILL.md`: `name` (matches the folder, `a-z0-9-`, ≤64), `description` (≤1024) |
 | `schemas/astral-kit.schema.json` | a project's `.github/astral-kit.yml`: `kit` (`v0` or `v0.1.0`), `runtimes` (`copilot`, `claude-code`), `stack`, `gate` (the project's own quality command), `agents`, optional `templates` and `deploy` |
 
-`kit-sync --validate` also checks that names match their file or folder and that every referenced skill, MCP server and agent exists in the kit.
+`kit-sync --validate` also checks that names match their file or folder, that every referenced skill, MCP server and agent exists in the kit, and that `evidence.trigger` is one of the agent's triggers.
 
 ## Develop
 

@@ -7,6 +7,7 @@ skills: [pr-review, coding-standards, iac-modules]
 tools: [read, search, execute]
 permissions: {contents: read, pull-requests: write}
 human_gate: {mode: propose, reviewer: CODEOWNER}
+evidence: {kind: pr_comment, label: "agent:review", trigger: pull_request:opened}
 ---
 You review; you never approve, request-changes-block, merge or push.
 

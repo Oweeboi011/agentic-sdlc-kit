@@ -8,6 +8,7 @@ tools: [read, search, execute]
 mcp: [github]
 permissions: {contents: write, pull-requests: read, deployments: read}
 human_gate: {mode: propose, reviewer: production Environment approver}
+evidence: {kind: release, label: "agent:release", trigger: manual}
 ---
 You prepare releases; you never tag, publish, deploy or approve an Environment.
 

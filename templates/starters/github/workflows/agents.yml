@@ -1,19 +1,31 @@
-# Kit agents on labels (propose-only): `needs-refinement` -> planner comment, `agent:claude` -> draft PR.
+# Kit agents (propose-only): `needs-refinement` -> planner comment, `agent:claude` -> draft PR, PR opened ->
+# review comment, `agent:tests` -> draft test PR, `incident` or an `alert` dispatch -> SRE triage comment,
+# Monday 06:00 UTC -> feedback themes, by hand -> draft release. Each output carries the kit evidence marker.
 # Needs a Claude endpoint: secret ANTHROPIC_API_KEY, or provider foundry + an Environment with Azure OIDC vars.
 name: Agents
 on:
   issues:
     types: [labeled]
+  pull_request:
+    types: [opened, synchronize, labeled]
+  repository_dispatch:
+    types: [alert]
+  schedule:
+    - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       agent:
-        description: planner or claude-code
+        description: Agent to run
         type: choice
-        options: [planner, claude-code]
-      issue:
-        description: Issue number
+        options: [planner, claude-code, review, test, sre, feedback, release]
+      number:
+        description: Issue or PR number (planner, claude-code, review, test, sre)
         type: number
-        required: true
+        default: 0
+      tag:
+        description: Proposed tag (release), e.g. v1.4.0
+        type: string
+        default: ""
 permissions:
   contents: read
 
@@ -26,7 +38,7 @@ jobs:
       id-token: write
     uses: ava-innersource/agentic-sdlc-kit/.github/workflows/planner.yml@v0
     with:
-      issue: ${{ github.event.issue.number || inputs.issue }}
+      issue: ${{ github.event.issue.number || inputs.number }}
     secrets:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
@@ -39,9 +51,77 @@ jobs:
       id-token: write
     uses: ava-innersource/agentic-sdlc-kit/.github/workflows/claude-code.yml@v0
     with:
-      issue: ${{ github.event.issue.number || inputs.issue }}
+      issue: ${{ github.event.issue.number || inputs.number }}
     secrets:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
       # GitHub App (ADR-0016) so CI runs on the agent's PR; without it CI waits for a human push.
       app-id: ${{ secrets.AGENT_APP_ID }}
       app-private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
+  review:
+    # Same-repo PRs only: fork PRs get no secrets.
+    if: >-
+      (github.event_name == 'pull_request' && github.event.action != 'labeled'
+      && github.event.pull_request.head.repo.full_name == github.repository) || inputs.agent == 'review'
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/review.yml@v0
+    with:
+      pr: ${{ github.event.pull_request.number || inputs.number }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  test:
+    if: github.event.label.name == 'agent:tests' || inputs.agent == 'test'
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/test.yml@v0
+    with:
+      number: ${{ github.event.issue.number || github.event.pull_request.number || inputs.number }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+      app-id: ${{ secrets.AGENT_APP_ID }}
+      app-private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
+  sre:
+    if: github.event_name == 'repository_dispatch' || github.event.label.name == 'incident' || inputs.agent == 'sre'
+    permissions:
+      contents: read
+      issues: write
+      actions: read
+      deployments: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/sre.yml@v0
+    with:
+      issue: ${{ github.event.issue.number || inputs.number || 0 }}
+      alert: ${{ github.event_name == 'repository_dispatch' && toJSON(github.event.client_payload) || '' }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  feedback:
+    if: github.event_name == 'schedule' || inputs.agent == 'feedback'
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/feedback.yml@v0
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  release:
+    if: inputs.agent == 'release'
+    permissions:
+      contents: write
+      pull-requests: read
+      deployments: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/release-agent.yml@v0
+    with:
+      tag: ${{ inputs.tag }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

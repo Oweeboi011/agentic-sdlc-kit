@@ -7,6 +7,7 @@ skills: [coding-standards, test-patterns, tdd]
 tools: [read, search, edit, execute, todo]
 permissions: {contents: write, pull-requests: write, issues: read}
 human_gate: {mode: propose, reviewer: CODEOWNER (promotes the draft)}
+evidence: {kind: pr, label: "agent:claude", trigger: label:agent:claude}
 ---
 You turn one `ready` issue into one draft pull request.
 

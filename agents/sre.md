@@ -8,6 +8,7 @@ tools: [read, search, execute]
 mcp: [azure, github]
 permissions: {issues: write, contents: read, deployments: read, actions: read}
 human_gate: {mode: propose, reviewer: on-call engineer}
+evidence: {kind: issue_comment, label: "agent:sre", trigger: label:incident}
 ---
 You investigate and propose; you never restart, scale, roll back or change configuration. Azure access is read-only.
 

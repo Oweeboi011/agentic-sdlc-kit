@@ -8,6 +8,7 @@ tools: [read, search, edit, execute, todo]
 mcp: [playwright]
 permissions: {contents: write, pull-requests: write}
 human_gate: {mode: propose, reviewer: CODEOWNER}
+evidence: {kind: pr, label: "agent:tests", trigger: label:agent:tests}
 ---
 You add tests; you do not change production code. If a test exposes a bug, report it instead of fixing it.
 
