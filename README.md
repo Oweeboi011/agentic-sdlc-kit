@@ -6,7 +6,7 @@ Design: [ADR-0014](https://github.com/ava-innersource/icoe-astral-ai/blob/main/d
 
 ## Status
 
-v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 9 skills, 5 instructions, 3 MCP templates), reusable workflows (K5), agent workflows (K6), templates, policies and the Spec Kit preset (K7). The sample project and `v0.1.0` land next (K8 in the plan).
+v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 9 skills, 5 instructions, 3 MCP templates), reusable workflows (K5), agent workflows (K6), templates, policies and the Spec Kit preset (K7), sample project with CI checks E1–E3 (K8). Next: tag `v0.1.0` once this repo is on GitHub and CI is green.
 
 ## Use
 
@@ -119,6 +119,16 @@ Prod reviewers are `{"type": "User" | "Team", "id": <number>}` (`gh api users/<l
 
 `presets/spec-kit/` is a [Spec Kit](https://github.com/github/spec-kit) org preset (ADR-0024), pinned to Spec Kit `~=1.4.0`. It appends non-functional (NFR-###), security, data-handling and traceability sections to `spec-template`, and replaces `constitution-template` with one generated from `instructions/` (`python -m kit_sync.preset`; a test fails while it is stale). Each release attaches it as `spec-kit-preset.zip`. Install: [presets/spec-kit/README.md](presets/spec-kit/README.md).
 
+## Sample project
+
+`examples/sample-project/` is a project with every runtime, stack, agent and template group enabled, committed exactly as `kit-sync --init` rendered it. Kit CI proves the exit criteria against the installed wheel:
+
+- **E1:** `kit-sync --check` on the sample passes, so both layouts render and match.
+- **E2:** a hand edit in a copy of the sample fails `--check` with `hand-edited`.
+- **E3:** `actionlint` covers the kit's workflows and the sample's starter workflows.
+
+Project text in its `AGENTS.md` (below `<!-- project -->`) and its starters are not drift.
+
 ## Schemas
 
 | Schema | Validates |
@@ -147,4 +157,5 @@ CI runs the same checks plus `actionlint` on every workflow.
 ## Release
 
 1. Move the `Unreleased` notes in `CHANGELOG.md` under the new version and bump `version` in `pyproject.toml` and `presets/spec-kit/preset.yml`.
-2. Merge, then push a tag `vX.Y.Z` from `main`. The release workflow publishes the GitHub release from the changelog, attaches `spec-kit-preset.zip` and moves the `vX` tag.
+2. Reinstall (`pip install -e ".[dev]"`) and re-render the sample, whose markers carry the version: `kit-sync --project examples/sample-project`.
+3. Merge, then push a tag `vX.Y.Z` from `main`. The release workflow publishes the GitHub release from the changelog, attaches `spec-kit-preset.zip` and moves the `vX` tag.

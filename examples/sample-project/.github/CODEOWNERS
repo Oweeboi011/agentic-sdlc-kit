@@ -1,0 +1,3 @@
+# Required reviewers for every PR (the kit's main ruleset requires code owner review).
+# Replace with your team handle; specs/ owners also receive `needs-decision` Issues.
+* @your-org/your-team

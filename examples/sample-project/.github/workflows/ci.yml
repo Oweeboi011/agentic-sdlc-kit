@@ -1,0 +1,33 @@
+# CI from the kit's reusable workflows. Add the install command your gate needs; pick ci-node for Node repos.
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/ci-python.yml@v0
+    with:
+      install: ""
+      gate: |
+        python tools/harness.py ci
+
+  security:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/security.yml@v0
+
+  kit-drift:
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/kit-drift.yml@v0
+    # While the kit repo is not public: a read-only token for it, stored as a repo secret.
+    # secrets:
+    #   kit-token: ${{ secrets.KIT_TOKEN }}

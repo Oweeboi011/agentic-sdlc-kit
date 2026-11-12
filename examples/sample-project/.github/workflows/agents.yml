@@ -1,0 +1,47 @@
+# Kit agents on labels (propose-only): `needs-refinement` -> planner comment, `agent:claude` -> draft PR.
+# Needs a Claude endpoint: secret ANTHROPIC_API_KEY, or provider foundry + an Environment with Azure OIDC vars.
+name: Agents
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: planner or claude-code
+        type: choice
+        options: [planner, claude-code]
+      issue:
+        description: Issue number
+        type: number
+        required: true
+permissions:
+  contents: read
+
+jobs:
+  planner:
+    if: github.event.label.name == 'needs-refinement' || inputs.agent == 'planner'
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/planner.yml@v0
+    with:
+      issue: ${{ github.event.issue.number || inputs.issue }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  claude-code:
+    if: github.event.label.name == 'agent:claude' || inputs.agent == 'claude-code'
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/claude-code.yml@v0
+    with:
+      issue: ${{ github.event.issue.number || inputs.issue }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+      # GitHub App (ADR-0016) so CI runs on the agent's PR; without it CI waits for a human push.
+      app-id: ${{ secrets.AGENT_APP_ID }}
+      app-private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}

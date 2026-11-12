@@ -1,0 +1,27 @@
+# Weekly grouped patch/minor updates; majors get their own PR. Uncomment the ecosystems the repo uses.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"], update-types: [minor, patch] }
+    commit-message: { prefix: "ci(deps)" }
+  # - package-ecosystem: pip
+  #   directories: ["/"]
+  #   schedule: { interval: weekly }
+  #   versioning-strategy: increase-if-necessary
+  #   groups:
+  #     python: { applies-to: version-updates, patterns: ["*"], update-types: [minor, patch] }
+  #   commit-message: { prefix: "build(deps)" }
+  # - package-ecosystem: npm
+  #   directory: /
+  #   schedule: { interval: weekly }
+  #   versioning-strategy: increase-if-necessary
+  #   groups:
+  #     npm: { applies-to: version-updates, patterns: ["*"], update-types: [minor, patch] }
+  #   commit-message: { prefix: "build(deps)" }
+  # - package-ecosystem: docker
+  #   directories: ["/"]
+  #   schedule: { interval: weekly }
+  #   commit-message: { prefix: "build(deps)" }

@@ -1,0 +1,9 @@
+# Sample project for kit CI (E1, E2): every runtime, stack, agent and template group.
+kit: v0
+runtimes: [copilot, claude-code]
+stack: [python, typescript-react, bicep, docker]
+gate: python tools/harness.py ci
+agents: [planner, coding, review, test, release, sre, feedback]
+deploy:
+  target: azure-container-apps
+  environments: [dev, staging, prod]

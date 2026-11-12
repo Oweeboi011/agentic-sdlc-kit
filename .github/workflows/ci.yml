@@ -38,12 +38,38 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/security.yml
 
+  # E1 + E2 against the installed wheel (not the checkout), so packaging gaps fail here.
+  example:
+    name: sample project (E1, E2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install .
+      - name: E1 sample renders both layouts and is in sync
+        working-directory: ${{ runner.temp }}
+        run: kit-sync --check --project "$GITHUB_WORKSPACE/examples/sample-project"
+      - name: E2 a hand edit is caught
+        working-directory: ${{ runner.temp }}
+        run: |
+          cp -r "$GITHUB_WORKSPACE/examples/sample-project" sample
+          echo "edited by hand" >> sample/.claude/agents/coding.md
+          if kit-sync --check --project sample > out.txt; then
+            echo "::error::kit-sync --check missed a hand edit"; exit 1
+          fi
+          grep -F ".claude/agents/coding.md: hand-edited" out.txt
+
+  # E3: the kit's workflows and the sample project's starter workflows.
   actionlint:
     name: actionlint
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - uses: docker://rhysd/actionlint:1.7.12
-        with:
-          args: -color
+      - name: actionlint 1.7.12
+        run: |
+          docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color \
+            .github/workflows/*.yml examples/sample-project/.github/workflows/*.yml
