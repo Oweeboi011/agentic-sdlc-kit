@@ -6,7 +6,7 @@ Design: [ADR-0014](https://github.com/ava-innersource/icoe-astral-ai/blob/main/d
 
 ## Status
 
-v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 9 skills, 5 instructions, 3 MCP templates), reusable workflows (K5), templates, policies and the Spec Kit preset (K7). Agent workflows and the sample project land next (K6, K8 in the plan).
+v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 9 skills, 5 instructions, 3 MCP templates), reusable workflows (K5), agent workflows (K6), templates, policies and the Spec Kit preset (K7). The sample project and `v0.1.0` land next (K8 in the plan).
 
 ## Use
 
@@ -62,12 +62,28 @@ jobs:
 - Commands passed as inputs reach scripts through `env`, never as inline expressions. Tests in `tests/test_workflows.py` enforce that, typed and documented inputs, pinned actions and no merge or approve step.
 - The kit's CI calls `ci-python` and `security` itself, so every kit PR runs them.
 
+## Agent workflows
+
+Propose-only agents on [Claude Code Action](https://github.com/anthropics/claude-code-action) (pinned to v1.0.271 by SHA). The `agents.yml` starter calls them on labels; both also run by hand (`workflow_dispatch`).
+
+| Workflow | Trigger (starter) | Does | Caller grants |
+|---|---|---|---|
+| `planner` | label `needs-refinement` | Follows `.claude/agents/planner.md`: posts one refinement comment. Tools: read, `gh issue view`, `gh issue comment` only. A human applies `ready` | `contents: read`, `issues: write`, `id-token: write` |
+| `claude-code` | label `agent:claude` | Follows `.claude/agents/coding.md` on branch `agent/issue-<N>`: test-first change, project gate, signed-off commits, **draft** PR with `Closes #N` | `contents: write`, `pull-requests: write`, `issues: read`, `id-token: write` |
+
+- **Propose-only by construction.** `claude-code` denies `gh pr merge`, `gh pr review`, `gh pr ready` and force pushes. A guard step runs after the agent: it turns a non-draft PR back into a draft, and fails the run (with a PR comment) if any commit lacks a `Signed-off-by` matching its author (DCO, plan R-07). The default branch must carry `policies/ruleset-main.json`, so the agent can't push to it.
+- **Claude endpoint** (plan A-03): `provider: anthropic` with secret `anthropic-api-key`, or `provider: foundry` with `foundry-base-url`, `model` (the Foundry deployment) and an `environment` whose vars hold `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` (OIDC, no stored key).
+- **CI on agent PRs needs a GitHub App** (ADR-0016): GitHub starts no workflows for pushes or PRs made with `GITHUB_TOKEN`. Pass secrets `app-id` and `app-private-key` to `claude-code`; it mints a short-lived App token (contents and pull requests write, issues read) for the push, the PR and the guard. Without them the draft PR opens but CI waits until a human pushes or re-runs it.
+- Issue text is passed as data, never as instructions. The action only runs for actors with write access.
+- Toolchain for the gate: `python-version`, `node-version`, `install` (as in `ci-python`).
+- Both need the agents rendered first (`kit-sync` with `planner` and `coding` in `agents`).
+
 ## Templates, starters and policies
 
 | Kind | Files | How it reaches the project |
 |---|---|---|
 | Managed templates (`templates/managed/`) | issue forms `story`, `bug`, `decision` (`needs-decision`), `feedback`, `config.yml`; `.github/pull_request_template.md`; `.githooks/commit-msg` | Rendered by `kit-sync` with the marker and checked by `--check`, like agents. Groups `issue-forms`, `pr-template`, `githooks` (`templates` in the config; default: all). The PR template keeps project checklist items below `<!-- project -->`. Hooks are written executable; enable once per clone with `git config core.hooksPath .githooks` |
-| Starters (`templates/starters/`) | `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/workflows/ci.yml` (calls the kit's reusable workflows with the project gate), `.github/workflows/copilot-setup-steps.yml` | `kit-sync --init` writes the ones the project lacks, without a marker. From then on the project owns them: they differ per repo (owners, ecosystems, toolchain) |
+| Starters (`templates/starters/`) | `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/workflows/ci.yml` (calls the kit's reusable workflows with the project gate), `.github/workflows/agents.yml` (agent workflows on labels), `.github/workflows/copilot-setup-steps.yml` | `kit-sync --init` writes the ones the project lacks, without a marker. From then on the project owns them: they differ per repo (owners, ecosystems, toolchain) |
 | Policies (`policies/`) | `ruleset-main.json`, `environments.json`, `labels.json` | Applied with `gh api` (below); ASTRAL's guardrails check the result |
 
 `{{gate}}` in a template or starter becomes the project's `gate`.

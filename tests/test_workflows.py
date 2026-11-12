@@ -8,7 +8,18 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
-REUSABLE = ["ci-node", "ci-python", "deploy-aca", "e2e-playwright", "iac-validate", "kit-drift", "security"]
+AGENT_WORKFLOWS = ["claude-code", "planner"]
+REUSABLE = [
+    "ci-node",
+    "ci-python",
+    "deploy-aca",
+    "e2e-playwright",
+    "iac-validate",
+    "kit-drift",
+    "security",
+    *AGENT_WORKFLOWS,
+]
+REVIEW_COMMANDS = ("gh pr merge", "gh pr review", "gh pr ready")
 INPUT_REF = re.compile(r"\binputs\.([a-z0-9-]+)")
 
 
@@ -64,8 +75,28 @@ def test_actions_are_pinned():
 def test_no_workflow_merges_approves_or_runs_untrusted_code():
     for path in WORKFLOWS.glob("*.yml"):
         text = path.read_text(encoding="utf-8")
-        for banned in ("gh pr merge", "--approve", "pull_request_target"):
-            assert banned not in text, f"{path.name}: {banned}"
+        assert "pull_request_target" not in text, path.name
+        assert "--approve" not in text, path.name
+        for step in steps(yaml.safe_load(text)):
+            for line in step.get("run", "").splitlines():
+                command = line.strip()
+                # Turning a PR back into a draft (`--undo`) is the one review-state change allowed.
+                if command.startswith(REVIEW_COMMANDS) and "--undo" not in command:
+                    raise AssertionError(f"{path.name}: {command}")
+
+
+@pytest.mark.parametrize("name", AGENT_WORKFLOWS)
+def test_agents_cannot_merge_review_or_mark_ready(name):
+    text = (WORKFLOWS / f"{name}.yml").read_text(encoding="utf-8")
+    assert "anthropics/claude-code-action@" in text
+    if name == "planner":
+        assert "--allowedTools" in text and "Edit" not in text
+        return
+    denied = re.search(r"denied='([^']+)'", text)
+    assert denied, "claude-code must set a deny list"
+    for command in REVIEW_COMMANDS:
+        assert f"Bash({command}:*)" in denied[1]
+    assert "Guard" in text and 'gh pr ready "$number" --undo' in text
 
 
 def test_kit_ci_runs_its_own_reusable_workflows():
