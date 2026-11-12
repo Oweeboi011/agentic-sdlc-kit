@@ -12,26 +12,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The kit runs its own reusable workflows, so every PR exercises them.
   python:
     name: python (${{ matrix.python }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     strategy:
       matrix:
         python: ["3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python }}
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - run: python -m pip install -e ".[dev]"
-      - run: python -m ruff check .
-      - run: python -m ruff format --check .
-      - run: python -m pytest -q
-      - run: kit-sync --version
-      - run: kit-sync --validate
+    uses: ./.github/workflows/ci-python.yml
+    with:
+      python-version: ${{ matrix.python }}
+      cache-dependency-path: pyproject.toml
+      install: python -m pip install -e ".[dev]"
+      gate: |
+        python -m ruff check .
+        python -m ruff format --check .
+        python -m pytest -q
+        kit-sync --version
+        kit-sync --validate
+      timeout-minutes: 10
+
+  security:
+    name: security
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/security.yml
 
   actionlint:
     name: actionlint

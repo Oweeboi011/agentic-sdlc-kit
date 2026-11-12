@@ -1,0 +1,31 @@
+# Reusable: compile and lint Bicep templates. No Azure sign-in; build errors fail, lint follows bicepconfig.json.
+name: iac-validate
+on:
+  workflow_call:
+    inputs:
+      templates:
+        description: Bicep files to check, one per line
+        type: string
+        default: infra/main.bicep
+permissions:
+  contents: read
+
+jobs:
+  bicep:
+    name: bicep
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TEMPLATES: ${{ inputs.templates }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: az bicep install
+      - name: Build and lint
+        run: |
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            echo "::group::$file"
+            az bicep build --file "$file" --stdout > /dev/null
+            az bicep lint --file "$file"
+            echo "::endgroup::"
+          done <<< "$TEMPLATES"

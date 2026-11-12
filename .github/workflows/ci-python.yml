@@ -1,0 +1,55 @@
+# Reusable: install Python deps, then run the project's own gate (`gate` in .github/astral-kit.yml).
+name: ci-python
+on:
+  workflow_call:
+    inputs:
+      gate:
+        description: The project's quality gate, run from the repo root (multi-line allowed)
+        type: string
+        required: true
+      install:
+        description: Install command run from the repo root before the gate; empty skips it
+        type: string
+        default: ""
+      python-version:
+        description: Python version for actions/setup-python
+        type: string
+        default: "3.11"
+      cache-dependency-path:
+        description: Files that key the pip cache (glob allowed); empty disables the cache
+        type: string
+        default: ""
+      fetch-depth:
+        description: Git history to fetch; 0 = full (history-wide secret scans need it)
+        type: number
+        default: 1
+      timeout-minutes:
+        description: Job timeout
+        type: number
+        default: 15
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: python
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: ${{ inputs.fetch-depth }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: ${{ inputs.cache-dependency-path != '' && 'pip' || '' }}
+          cache-dependency-path: ${{ inputs.cache-dependency-path }}
+      - name: Install
+        if: inputs.install != ''
+        env:
+          INSTALL: ${{ inputs.install }}
+        run: bash -euo pipefail -c "$INSTALL"
+      - name: Gate
+        env:
+          GATE: ${{ inputs.gate }}
+        run: bash -euo pipefail -c "$GATE"

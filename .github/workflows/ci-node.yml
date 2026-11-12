@@ -1,0 +1,50 @@
+# Reusable: `npm ci` in the package folder, then run the project's own gate from the repo root.
+name: ci-node
+on:
+  workflow_call:
+    inputs:
+      gate:
+        description: The project's quality gate, run from the repo root (multi-line allowed)
+        type: string
+        required: true
+      package-directory:
+        description: Folder holding package.json and package-lock.json
+        type: string
+        default: "."
+      node-version:
+        description: Node.js version for actions/setup-node
+        type: string
+        default: "22"
+      python-version:
+        description: Also set up Python, for gates written in Python; empty skips it
+        type: string
+        default: ""
+      timeout-minutes:
+        description: Job timeout
+        type: number
+        default: 15
+permissions:
+  contents: read
+
+jobs:
+  node:
+    name: node
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        if: inputs.python-version != ''
+        with:
+          python-version: ${{ inputs.python-version }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.package-directory }}/package-lock.json
+      - run: npm ci
+        working-directory: ${{ inputs.package-directory }}
+      - name: Gate
+        env:
+          GATE: ${{ inputs.gate }}
+        run: bash -euo pipefail -c "$GATE"

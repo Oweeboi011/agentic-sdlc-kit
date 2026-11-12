@@ -1,0 +1,147 @@
+# Reusable: provision Bicep, build and push images to ACR, roll Container Apps (and Jobs), smoke-test.
+# OIDC only: the GitHub Environment holds vars AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
+# AZURE_RESOURCE_GROUP. Callers grant `contents: read` and `id-token: write`. Run it from the project's
+# deploy pipeline after a human merge; kit agents never call it (ADR-0007, ADR-0014).
+name: deploy-aca
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment to deploy (its vars and protection rules apply)
+        type: string
+        required: true
+      ref:
+        description: Commit to deploy and tag images with; empty = the triggering commit
+        type: string
+        default: ""
+      template:
+        description: Bicep template, deployed at resource-group scope
+        type: string
+        default: infra/main.bicep
+      deployment-name:
+        description: ARM deployment name; its outputs are read to keep running images
+        type: string
+        default: main
+      parameters:
+        description: Extra template parameters, one `name=value` per line
+        type: string
+        default: ""
+      images:
+        description: >-
+          One app per line: `<image-param> <app-output> <image-name> <build-context> [<job-output>...]`.
+          The template takes the image in <image-param> and returns the app name in <app-output>;
+          jobs listed after the context run the same image.
+        type: string
+        required: true
+      registry-output:
+        description: Template output holding the Azure Container Registry name
+        type: string
+        default: containerRegistryName
+      health-fqdn-output:
+        description: Template output holding the FQDN to smoke-test; empty skips the smoke test
+        type: string
+        default: ""
+      health-path:
+        description: Path that must answer 2xx within 5 minutes
+        type: string
+        default: /health
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: deploy (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 45
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      SHA: ${{ inputs.ref || github.sha }}
+      TEMPLATE: ${{ inputs.template }}
+      DEPLOYMENT: ${{ inputs.deployment-name }}
+      PARAMETERS: ${{ inputs.parameters }}
+      IMAGES: ${{ inputs.images }}
+      REGISTRY_OUTPUT: ${{ inputs.registry-output }}
+      FQDN_OUTPUT: ${{ inputs.health-fqdn-output }}
+      HEALTH_PATH: ${{ inputs.health-path }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: Require the environment variables
+        run: |
+          missing=0
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP; do
+            [ -n "${!name}" ] || { echo "::error::Set the $name variable on the $ENVIRONMENT environment"; missing=1; }
+          done
+          exit "$missing"
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Re-provisioning must not reset apps to a placeholder: pass each app's running image back in.
+      - name: Provision infra (Bicep), keeping running images
+        run: |
+          placeholder=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest
+          previous=$(az deployment group show -g "$RG" -n "$DEPLOYMENT" --query properties.outputs -o json 2>/dev/null || echo '{}')
+          params=()
+          while read -r param app_output _; do
+            [ -n "$param" ] || continue
+            app=$(jq -r --arg k "$app_output" '.[$k].value // empty' <<< "$previous")
+            image=""
+            [ -z "$app" ] || image=$(az containerapp show -g "$RG" -n "$app" --query 'properties.template.containers[0].image' -o tsv 2>/dev/null || true)
+            params+=("$param=${image:-$placeholder}")
+          done <<< "$IMAGES"
+          while IFS= read -r line; do
+            [ -z "$line" ] || params+=("$line")
+          done <<< "$PARAMETERS"
+          az deployment group create -g "$RG" -n "$DEPLOYMENT" -f "$TEMPLATE" -p "${params[@]}" \
+            --query properties.outputs -o json > "$RUNNER_TEMP/outputs.json"
+
+      - name: Build, push and roll images
+        run: |
+          o() { jq -r --arg k "$1" '.[$k].value // empty' "$RUNNER_TEMP/outputs.json"; }
+          acr=$(o "$REGISTRY_OUTPUT")
+          [ -n "$acr" ] || { echo "::error::Template output $REGISTRY_OUTPUT is empty"; exit 1; }
+          server=$(az acr show -n "$acr" --query loginServer -o tsv)
+          az acr login -n "$acr"
+          while read -r _ app_output name context jobs; do
+            [ -n "$name" ] || continue
+            app=$(o "$app_output")
+            [ -n "$app" ] || { echo "::error::Template output $app_output is empty"; exit 1; }
+            image="$server/$name:$SHA"
+            docker build -t "$image" "$context"
+            docker push "$image"
+            az containerapp update -g "$RG" -n "$app" --image "$image" -o none
+            read -r -a job_outputs <<< "$jobs"
+            for job_output in "${job_outputs[@]}"; do
+              job=$(o "$job_output")
+              [ -n "$job" ] || { echo "::error::Template output $job_output is empty"; exit 1; }
+              az containerapp job update -g "$RG" -n "$job" --image "$image" -o none
+            done
+          done <<< "$IMAGES"
+
+      - name: Smoke test
+        if: inputs.health-fqdn-output != ''
+        run: |
+          fqdn=$(jq -r --arg k "$FQDN_OUTPUT" '.[$k].value // empty' "$RUNNER_TEMP/outputs.json")
+          [ -n "$fqdn" ] || { echo "::error::Template output $FQDN_OUTPUT is empty"; exit 1; }
+          for _ in $(seq 1 30); do
+            curl -fsS "https://$fqdn$HEALTH_PATH" && exit 0
+            sleep 10
+          done
+          echo "::error::https://$fqdn$HEALTH_PATH did not answer"; exit 1
