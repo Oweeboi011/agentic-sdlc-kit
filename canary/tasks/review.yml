@@ -1,0 +1,16 @@
+# Golden task: a PR with an off-by-one planted at a known line; the review must flag it.
+agent: review
+seed: pr
+title: "[canary] Paginate the invoice list"
+body: Adds page slicing to the invoice list.
+files:
+  canary/pagination.py: |
+    def page(items: list, number: int, size: int = 20) -> list:
+        """Items on 1-based page `number`."""
+        start = number * size
+        return items[start : start + size]
+expected:
+  path: canary/pagination.py
+  line: 3
+  severities: [high, medium]
+rubric: Names canary/pagination.py:3 (the 1-based page skips the first page) as high or medium.

@@ -37,6 +37,17 @@ jobs:
       - name: Spec Kit preset archive (specify preset add --from <asset URL>)
         working-directory: presets/spec-kit
         run: zip -qr "$RUNNER_TEMP/spec-kit-preset.zip" .
+      # ADR-0026: the canary repo must have passed on this exact commit (dispatch `kit-candidate` with its sha).
+      - name: Canary passed on this commit
+        env:
+          CANARY_REPO: ${{ vars.CANARY_REPO }}
+          CANARY_TOKEN: ${{ secrets.CANARY_READ_TOKEN }}
+        run: |
+          if [ -z "$CANARY_REPO" ]; then
+            echo "::notice::vars.CANARY_REPO is not set; the canary gate is off until the canary repo exists"; exit 0
+          fi
+          titles=$(GH_TOKEN="${CANARY_TOKEN:-$GH_TOKEN}" gh run list -R "$CANARY_REPO" --workflow canary.yml             --status success --limit 50 --json displayTitle -q '.[].displayTitle')
+          grep -qx "canary $GITHUB_SHA" <<< "$titles"             || { echo "::error::No passing canary for $GITHUB_SHA in $CANARY_REPO; dispatch kit-candidate first"; exit 1; }
       - name: Publish release
         run: gh release create "$TAG" "$RUNNER_TEMP/spec-kit-preset.zip" --title "$TAG" --notes-file notes.md --verify-tag
       - name: Move major tag

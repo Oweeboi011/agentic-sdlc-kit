@@ -1,0 +1,255 @@
+# Reusable: daily canary in the canary repo (ADR-0026). Seeds the golden tasks in canary/tasks, runs each
+# agent workflow on them, grades every output deterministically (jobs `grade (<agent>)`, artifact
+# canary-results-<agent>) and closes the seeds. Agent workflows run from the kit's `main`, so a pass on a
+# main commit is the release candidate's result; the kit's release workflow checks it. Writes stay in the
+# canary repo; ASTRAL only reads the job results. Callers grant contents, issues, pull-requests write,
+# actions and checks read, id-token write.
+name: canary
+on:
+  workflow_call:
+    inputs:
+      kit-ref:
+        description: Kit ref for the tasks and graders (agent workflows always run from main)
+        type: string
+        default: main
+      provider:
+        description: Claude endpoint, `anthropic` (API key secret) or `foundry` (Azure OIDC, environment vars)
+        type: string
+        default: anthropic
+      model:
+        description: Model or Foundry deployment name; empty uses the action's default
+        type: string
+        default: ""
+    secrets:
+      anthropic-api-key:
+        description: Anthropic API key (provider anthropic)
+        required: false
+      app-id:
+        description: GitHub App ID (ADR-0016); needed so CI runs on the coding and test agents' PRs
+        required: false
+      app-private-key:
+        description: GitHub App private key
+        required: false
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    name: seed
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      planner: ${{ steps.seed.outputs.planner }}
+      review: ${{ steps.seed.outputs.review }}
+      coding: ${{ steps.seed.outputs.coding }}
+      test: ${{ steps.seed.outputs.test }}
+      alert: ${{ steps.seed.outputs.alert }}
+      kit-sha: ${{ steps.seed.outputs.kit-sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: ava-innersource/agentic-sdlc-kit
+          ref: ${{ inputs.kit-ref }}
+          path: .kit
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Seed golden tasks
+        id: seed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m pip install -q ./.kit
+          kit-canary seed --tasks .kit/canary/tasks --state canary-state.json
+          for agent in planner review coding test; do
+            echo "$agent=$(jq -r ".seeds.$agent.number" canary-state.json)" >> "$GITHUB_OUTPUT"
+          done
+          echo "alert=$(jq -c -r '.seeds.sre.alert' canary-state.json)" >> "$GITHUB_OUTPUT"
+          echo "kit-sha=$(git -C .kit rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: canary-state
+          path: canary-state.json
+
+  planner:
+    needs: seed
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/planner.yml@main
+    with:
+      issue: ${{ fromJSON(needs.seed.outputs.planner) }}
+      provider: ${{ inputs.provider }}
+      model: ${{ inputs.model }}
+    secrets:
+      anthropic-api-key: ${{ secrets.anthropic-api-key }}
+
+  review:
+    needs: seed
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/review.yml@main
+    with:
+      pr: ${{ fromJSON(needs.seed.outputs.review) }}
+      provider: ${{ inputs.provider }}
+      model: ${{ inputs.model }}
+    secrets:
+      anthropic-api-key: ${{ secrets.anthropic-api-key }}
+
+  coding:
+    needs: seed
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/claude-code.yml@main
+    with:
+      issue: ${{ fromJSON(needs.seed.outputs.coding) }}
+      provider: ${{ inputs.provider }}
+      model: ${{ inputs.model }}
+      python-version: "3.12"
+      install: python -m pip install -q pytest
+    secrets:
+      anthropic-api-key: ${{ secrets.anthropic-api-key }}
+      app-id: ${{ secrets.app-id }}
+      app-private-key: ${{ secrets.app-private-key }}
+
+  test:
+    needs: seed
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/test.yml@main
+    with:
+      number: ${{ fromJSON(needs.seed.outputs.test) }}
+      provider: ${{ inputs.provider }}
+      model: ${{ inputs.model }}
+      python-version: "3.12"
+      install: python -m pip install -q pytest
+    secrets:
+      anthropic-api-key: ${{ secrets.anthropic-api-key }}
+      app-id: ${{ secrets.app-id }}
+      app-private-key: ${{ secrets.app-private-key }}
+
+  sre:
+    needs: seed
+    permissions:
+      contents: read
+      issues: write
+      actions: read
+      deployments: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/sre.yml@main
+    with:
+      alert: ${{ needs.seed.outputs.alert }}
+      provider: ${{ inputs.provider }}
+      model: ${{ inputs.model }}
+    secrets:
+      anthropic-api-key: ${{ secrets.anthropic-api-key }}
+
+  feedback:
+    needs: seed
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/feedback.yml@main
+    with:
+      days: 1
+      provider: ${{ inputs.provider }}
+      model: ${{ inputs.model }}
+    secrets:
+      anthropic-api-key: ${{ secrets.anthropic-api-key }}
+
+  grade:
+    name: grade (${{ matrix.agent }})
+    needs: [seed, planner, review, coding, test, sre, feedback]
+    if: always() && needs.seed.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      checks: read
+    strategy:
+      fail-fast: false
+      matrix:
+        agent: [planner, review, coding, test, sre, feedback]
+    env:
+      AGENT: ${{ matrix.agent }}
+      KIT_SHA: ${{ needs.seed.outputs.kit-sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          repository: ava-innersource/agentic-sdlc-kit
+          ref: ${{ needs.seed.outputs.kit-sha }}
+          path: .kit
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v7
+        with:
+          name: canary-state
+      - name: Grade
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m pip install -q ./.kit pytest
+          kit-canary grade --agent "$AGENT" --tasks .kit/canary/tasks --state canary-state.json \
+            --out "canary-results-$AGENT.json"
+      - name: Results summary
+        if: always()
+        run: |
+          [ -f "canary-results-$AGENT.json" ] || exit 0
+          jq --arg sha "$KIT_SHA" '. + {kitSha: $sha}' "canary-results-$AGENT.json" > out.json
+          mv out.json "canary-results-$AGENT.json"
+          { echo "### Canary: $AGENT"; echo '```json'; cat "canary-results-$AGENT.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: canary-results-${{ matrix.agent }}
+          path: canary-results-${{ matrix.agent }}.json
+          if-no-files-found: ignore
+
+  cleanup:
+    needs: [seed, grade]
+    if: always() && needs.seed.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ava-innersource/agentic-sdlc-kit
+          ref: ${{ needs.seed.outputs.kit-sha }}
+          path: .kit
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v7
+        with:
+          name: canary-state
+      - name: Close seeds and agent outputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m pip install -q ./.kit
+          kit-canary cleanup --tasks .kit/canary/tasks --state canary-state.json

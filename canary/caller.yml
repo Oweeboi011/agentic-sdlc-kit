@@ -1,0 +1,39 @@
+# Copy to the canary repo as .github/workflows/canary.yml (ADR-0026). The canary repo is created from
+# examples/sample-project and onboarded in ASTRAL like any project; ASTRAL reads its `grade (<agent>)` jobs.
+# Daily, by hand, or on `repository_dispatch: kit-candidate` with client_payload.sha (a kit main commit).
+name: canary
+run-name: canary ${{ github.event.client_payload.sha || inputs.kit-ref || 'main' }}
+on:
+  schedule:
+    - cron: "30 5 * * *"
+  repository_dispatch:
+    types: [kit-candidate]
+  workflow_dispatch:
+    inputs:
+      kit-ref:
+        description: Kit ref for tasks and graders
+        type: string
+        default: main
+permissions:
+  contents: read
+concurrency:
+  group: canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: read
+      checks: read
+      deployments: read
+      id-token: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/canary.yml@main
+    with:
+      kit-ref: ${{ github.event.client_payload.sha || inputs.kit-ref || 'main' }}
+    secrets:
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+      app-id: ${{ secrets.AGENT_APP_ID }}
+      app-private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}

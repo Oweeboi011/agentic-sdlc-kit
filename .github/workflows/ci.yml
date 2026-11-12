@@ -72,4 +72,4 @@ jobs:
       - name: actionlint 1.7.12
         run: |
           docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color \
-            .github/workflows/*.yml examples/sample-project/.github/workflows/*.yml
+            .github/workflows/*.yml canary/caller.yml examples/sample-project/.github/workflows/*.yml

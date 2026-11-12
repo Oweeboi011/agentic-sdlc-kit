@@ -1,0 +1,12 @@
+# Golden task: a rough story the planner must refine into the story-refinement shape.
+agent: planner
+seed: issue
+title: "[canary] Let users export their invoices as CSV"
+body: |
+  Finance asked for a way to download invoices. Users on the billing page should get a CSV with
+  date, number, amount and status. Large accounts have up to 5000 invoices.
+expected:
+  sections: [goal, acceptance criteria, out of scope, test notes, estimate, open questions]
+  min_criteria: 3
+  max_criteria: 7
+rubric: One comment with every story-refinement section and 3-7 acceptance criteria.

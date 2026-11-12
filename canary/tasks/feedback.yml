@@ -1,0 +1,16 @@
+# Golden task: seeded feedback with two known themes; the agent must find both and stay under its cap.
+agent: feedback
+seed: feedback
+issues:
+  - "[canary] CSV export times out for big accounts"
+  - "[canary] Export to CSV never finishes, I have 4000 invoices"
+  - "[canary] Download of invoices hangs"
+  - "[canary] Dark mode please, the billing page is too bright"
+  - "[canary] Night theme for the dashboard"
+  - "[canary] Please add a dark theme"
+expected:
+  max_issues: 5
+  themes:
+    export: [export, csv, download]
+    dark mode: [dark, night, theme]
+rubric: At most 5 from-feedback Issues; one covers the export timeouts and one the dark mode requests.

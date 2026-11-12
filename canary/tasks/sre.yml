@@ -1,0 +1,25 @@
+# Golden task: a synthetic Azure Monitor alert; the triage must cite the right KQL and cause.
+agent: sre
+seed: alert
+alert:
+  schemaId: azureMonitorCommonAlertSchema
+  data:
+    essentials:
+      alertRule: "[canary] api 5xx rate above 5%"
+      severity: Sev2
+      monitorCondition: Fired
+      firedDateTime: "2026-11-13T06:00:00Z"
+    alertContext:
+      condition:
+        allOf:
+          - metricName: requests/failed
+            metricValue: 12.5
+            dimensions:
+              - name: cloud_RoleName
+                value: canary-api
+    customProperties:
+      hint: "The 5xx started right after release v1.4.0; requests to /invoices return 500 with KeyError 'currency'."
+expected:
+  kql: [requests, exceptions]
+  cause: [v1.4.0, currency]
+rubric: A triage comment with a ```kql block over requests or exceptions that names v1.4.0 and the currency error.

@@ -84,6 +84,17 @@ Propose-only agents on [Claude Code Action](https://github.com/anthropics/claude
 - Toolchain for the gate (`claude-code`, `test`): `python-version`, `node-version`, `install` (as in `ci-python`).
 - Each needs its agent rendered first (`kit-sync` with the agent in `agents`).
 
+## Canary
+
+Golden tasks prove the agents can still do their job (ADR-0026). `canary` (reusable) runs in a dedicated canary repo, created from `examples/sample-project` and onboarded in ASTRAL like any project; copy `canary/caller.yml` there as `.github/workflows/canary.yml` (daily, by hand, or on `repository_dispatch: kit-candidate` with a kit `sha`).
+
+1. **Seed** (`kit-canary seed`): one input per task in `canary/tasks/*.yml`: a story for the planner, a PR with a planted bug at a known `file:line` for review, a small spec for coding (the acceptance test stays hidden), an untested function for test (as a PR), a synthetic Azure Monitor alert for SRE, six `feedback` Issues with two themes.
+2. **Run** each agent workflow on its seed, from the kit's `main`.
+3. **Grade** (`kit-canary grade`, job `grade (<agent>)`), deterministic: planner has every story section and 3–7 criteria; review names the planted line as high or medium; coding's draft PR closes the issue, has green checks and passes the hidden test; test's tests pass on the function and fail on the planted bug; SRE cites `requests`/`exceptions` KQL and the cause; feedback finds both themes within its cap. Each writes `canary-results-<agent>.json` (pass, reasons, kit, model, output, kit sha) as an artifact and the step summary.
+4. **Clean up** (`kit-canary cleanup`): seeds, agent PRs and Issues of the run are closed, seed branches deleted.
+
+ASTRAL reads the latest completed run's `grade (<agent>)` jobs into the Canary column of Agent health. The kit `Release` workflow refuses a tag unless the canary repo (`vars.CANARY_REPO`, read with `secrets.CANARY_READ_TOKEN`) has a passing run titled `canary <sha>` for the tagged commit; with `CANARY_REPO` unset the gate is off. Needs a Claude endpoint, and the GitHub App (ADR-0016) for CI on the coding and test PRs.
+
 ## Templates, starters and policies
 
 | Kind | Files | How it reaches the project |

@@ -1,0 +1,22 @@
+# Golden task: a small spec; a hidden acceptance test (not in the issue) must pass on the agent's PR.
+agent: coding
+seed: issue
+title: "[canary] Add slugify(text) to canary/text.py"
+body: |
+  Add `slugify(text: str) -> str` in `canary/text.py`: lower-case, ASCII letters and digits kept,
+  every other run of characters becomes one `-`, no leading or trailing `-`. Add unit tests.
+hidden_test:
+  path: tests/test_canary_slugify_hidden.py
+  content: |
+    from canary.text import slugify
+
+
+    def test_hidden_acceptance():
+        assert slugify("  Hello, World! 2026 ") == "hello-world-2026"
+        assert slugify("--a__b--") == "a-b"
+        assert slugify("") == ""
+  command: python -m pytest -q tests/test_canary_slugify_hidden.py
+expected:
+  closes_issue: true
+  checks: success
+rubric: A draft PR that closes the issue, with green checks, passing the hidden test.

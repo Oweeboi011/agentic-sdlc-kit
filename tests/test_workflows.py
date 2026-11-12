@@ -27,6 +27,7 @@ EVIDENCE = "ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0"
 ACTION = ROOT / ".github" / "actions" / "agent-evidence" / "action.yml"
 STARTER = ROOT / "templates" / "starters" / "github" / "workflows" / "agents.yml"
 REUSABLE = [
+    "canary",
     "ci-node",
     "ci-python",
     "deploy-aca",
