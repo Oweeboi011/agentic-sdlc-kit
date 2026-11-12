@@ -87,7 +87,7 @@ runs:
         while IFS=$'\t' read -r id url body64; do
           [ -n "$id" ] || continue
           body=$(base64 -d <<< "$body64")
-          if [[ "$body" != *"agentic-sdlc-kit agent=$AGENT "* ]]; then
+          if [[ "$body" != *"agentic-sdlc-kit agent=$AGENT "*" run=$GITHUB_RUN_ID "* ]]; then
             gh api -X PATCH "$edit/$id" -f body="${body}"$'\n\n'"${marker}" > /dev/null
           fi
           if [ "$KIND" = pr ] || [ "$KIND" = issue ]; then

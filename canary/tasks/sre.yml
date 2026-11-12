@@ -17,8 +17,10 @@ alert:
             dimensions:
               - name: cloud_RoleName
                 value: canary-api
-    customProperties:
-      hint: "The 5xx started right after release v1.4.0; requests to /invoices return 500 with KeyError 'currency'."
+# Seeded as a prerelease so the cause must come from the agent's evidence, not from the alert.
+release:
+  tag: canary-v1.4.0
+  notes: "v1.4.0: invoice totals now read `currency` from the account record (accounts without it raise KeyError)."
 expected:
   kql: [requests, exceptions]
   cause: [v1.4.0, currency]

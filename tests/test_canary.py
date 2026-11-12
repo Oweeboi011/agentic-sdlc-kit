@@ -113,7 +113,9 @@ def test_feedback_grader():
     export = {**mark("feedback", "Users report CSV export timeouts"), "title": "Fix export timeouts"}
     dark = {**mark("feedback", "Several asks"), "title": "Add a dark theme"}
     assert grade_feedback(TASKS["feedback"], [export, dark]).passed
-    assert grade_feedback(TASKS["feedback"], [export]).reasons == ["theme not found: dark mode"]
+    assert grade_feedback(TASKS["feedback"], [export]).reasons == ["no Issue for theme alone: dark mode"]
+    both = {**mark("feedback", "CSV export hangs and add dark mode"), "title": "Misc"}
+    assert len(grade_feedback(TASKS["feedback"], [both]).reasons) == 2  # one Issue is not two clusters
     assert grade_feedback(TASKS["feedback"], [export] * 5 + [dark]).reasons == ["6 Issues, over the cap of 5"]
     assert not grade_feedback(TASKS["feedback"], []).passed
 

@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,6 +25,7 @@ MARKER = re.compile(r"<!--\s*agentic-sdlc-kit agent=([a-z][a-z0-9-]*) kit=(\S+) 
 SEVERITY = re.compile(r"\b(high|medium|low)\b", re.I)
 CRITERION = re.compile(r"^\s*(?:[-*+]|\d+[.)]|- \[[ x]\])\s+\S")
 CANARY_LABEL = "canary"
+CI_WAIT_SECONDS = 1200  # agent PR CI must finish within the grade job
 
 
 @dataclass
@@ -170,10 +172,12 @@ def grade_feedback(task: dict, issues: list[dict]) -> Result:
         return result.fail("no from-feedback Issue with the evidence marker")
     if len(found) > task["expected"]["max_issues"]:
         result.fail(f"{len(found)} Issues, over the cap of {task['expected']['max_issues']}")
+    themes = task["expected"]["themes"]
     texts = [f"{i.get('title', '')} {i.get('body') or ''}".lower() for i in found]
-    for theme, words in task["expected"]["themes"].items():
-        if not any(any(w in t for w in words) for t in texts):
-            result.fail(f"theme not found: {theme}")
+    hits = [{t for t, words in themes.items() if any(w in text for w in words)} for text in texts]
+    for theme in themes:
+        if not any(h == {theme} for h in hits):
+            result.fail(f"no Issue for theme alone: {theme}")
     return result
 
 
@@ -223,7 +227,9 @@ def _seed_one(task: dict, run: str) -> dict:
                   "--label", CANARY_LABEL)  # fmt: skip
         return {"number": int(url.rsplit("/", 1)[-1]), "branch": branch}
     if kind == "alert":
-        return {"number": 0, "alert": json.dumps(task["alert"])}
+        rel = task["release"]
+        _gh("release", "create", rel["tag"], "--prerelease", "--title", rel["tag"], "--notes", rel["notes"])
+        return {"number": 0, "alert": json.dumps(task["alert"]), "release": rel["tag"]}
     numbers = [_issue(title, "Canary feedback.", "feedback", CANARY_LABEL) for title in task["issues"]]
     return {"number": 0, "issues": numbers}
 
@@ -253,12 +259,18 @@ def _agent_pr(branch: str) -> dict | None:
     return prs[0] if prs else None
 
 
-def _checks(sha: str) -> str | None:
-    runs = (_api(f"repos/{_repo()}/commits/{sha}/check-runs?per_page=100") or {}).get("check_runs", [])
-    runs = [r for r in runs if not r["name"].startswith("grade")]
-    if not runs or any(r["status"] != "completed" for r in runs):
-        return None
-    return "success" if all(r["conclusion"] in ("success", "skipped", "neutral") for r in runs) else "failure"
+def _checks(sha: str, wait: int = CI_WAIT_SECONDS) -> str | None:
+    """CI on the agent's head commit, polled until every check completes; None if none ran in time."""
+    deadline = time.monotonic() + wait
+    while True:
+        found = _api(f"repos/{_repo()}/commits/{sha}/check-runs?per_page=100") or {}
+        runs = [r for r in found.get("check_runs", []) if not r["name"].startswith("grade")]
+        if runs and all(r["status"] == "completed" for r in runs):
+            ok = all(r["conclusion"] in ("success", "skipped", "neutral") for r in runs)
+            return "success" if ok else "failure"
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(30)
 
 
 def _run(command: str) -> bool:
@@ -323,6 +335,8 @@ def cleanup(state: dict) -> None:
             _gh(kind, "close", str(n), "--comment", note)
         if seeded.get("branch"):
             _api(f"repos/{repo}/git/refs/heads/{seeded['branch']}", method="DELETE")
+        if seeded.get("release"):
+            _gh("release", "delete", seeded["release"], "--cleanup-tag", "--yes")
     opened = _api(f"repos/{repo}/issues?labels=from-feedback&state=open&since={since}") or []
     for issue in _since(opened, since):
         _gh("issue", "close", str(issue["number"]), "--comment", note)

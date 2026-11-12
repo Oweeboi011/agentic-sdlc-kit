@@ -43,7 +43,8 @@ jobs:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
   claude-code:
-    if: github.event.label.name == 'agent:claude' || inputs.agent == 'claude-code'
+    # Issues only: the evidence step labels the agent's own PR agent:claude.
+    if: (github.event_name == 'issues' && github.event.label.name == 'agent:claude') || inputs.agent == 'claude-code'
     permissions:
       contents: write
       pull-requests: write
@@ -74,7 +75,10 @@ jobs:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
   test:
-    if: github.event.label.name == 'agent:tests' || inputs.agent == 'test'
+    # Not on the agents' own PRs (agent/* branches), which the evidence step labels agent:tests.
+    if: >-
+      (github.event.label.name == 'agent:tests' && !startsWith(github.event.pull_request.head.ref, 'agent/'))
+      || inputs.agent == 'test'
     permissions:
       contents: write
       pull-requests: write
