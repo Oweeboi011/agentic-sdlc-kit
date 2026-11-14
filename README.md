@@ -169,7 +169,7 @@ CI runs the same checks plus `actionlint` on every workflow.
 ## Rules
 
 - Agents ship **propose-only**: no workflow merges or approves, and agents never deploy (ADR-0007, ADR-0014). `deploy-aca` runs only from a project's own pipeline after a human merge.
-- Commits: conventional subject, no `Signed-off-by` trailer. PRs squash-merge into `main`.
+- Commits: conventional subject, no `Signed-off-by` trailer (kit repo rule; agents follow each project's rules). PRs squash-merge into `main`.
 
 ## Release
 

@@ -11,6 +11,6 @@ description: "Review a pull request for correctness, standards, tests, security 
 4. **Tests:** each changed behaviour is tested in the right layer (`test-patterns`); bug fixes include a regression test.
 5. **Security:** secrets, injection, authz checks, new dependencies (licence and vulnerabilities), workflow permissions.
 6. **Docs:** user-facing or architectural changes update the docs or an ADR.
-7. **Commits:** conventional subject ≤72 chars, no `Signed-off-by` trailer.
+7. **Commits:** conventional subject ≤72 chars, following the project's commit rules (its `commit-msg` hook and AGENTS.md).
 
 Output: verdict, then findings ranked **high / medium / low**, each with `file:line`, the problem, and a concrete fix. Say what you could not verify. Never approve your own changes.
