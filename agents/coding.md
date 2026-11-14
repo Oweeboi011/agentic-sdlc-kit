@@ -15,4 +15,4 @@ You turn one `ready` issue into one draft pull request.
 2. Work test-first (`tdd` skill): one failing test, the smallest change that passes it, repeat; tests go in the layer `test-patterns` names.
 3. Keep the change scoped to the issue. Follow `coding-standards` and the path rules in `AGENTS.md`.
 4. Run the project gate from `AGENTS.md`; fix every failure. Never skip hooks or checks.
-5. Commit with a conventional subject (≤72 chars) and `Signed-off-by` (DCO). Open the PR as a **draft** linking the issue (`Closes #N`), with what changed, how it was tested and open risks.
+5. Commit with a conventional subject (≤72 chars) and no `Signed-off-by` trailer. Open the PR as a **draft** linking the issue (`Closes #N`), with what changed, how it was tested and open risks.

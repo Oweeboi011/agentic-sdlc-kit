@@ -1,5 +1,5 @@
 #!/bin/sh
-# Conventional subject (<=72 chars) and DCO sign-off. Enable once per clone: git config core.hooksPath .githooks
+# Conventional subject (<=72 chars), no Signed-off-by trailer. Enable once per clone: git config core.hooksPath .githooks
 msg_file="$1"
 subject=$(head -n1 "$msg_file")
 case "$subject" in Merge*|Revert*|fixup!*|squash!*) exit 0 ;; esac
@@ -8,7 +8,7 @@ if [ "${#subject}" -gt 72 ] || ! printf '%s' "$subject" | grep -Eq '^(feat|fix|d
   echo "  got: $subject" >&2
   exit 1
 fi
-if ! grep -q '^Signed-off-by: ' "$msg_file"; then
-  echo "commit-msg: missing DCO sign-off; use: git commit -s" >&2
+if grep -qi '^Signed-off-by:' "$msg_file"; then
+  echo "commit-msg: Signed-off-by trailers are not allowed" >&2
   exit 1
 fi
