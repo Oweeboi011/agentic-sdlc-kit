@@ -1,0 +1,10 @@
+{
+  "type": "http",
+  "url": "${ASTRAL_MCP_URL}",
+  "headers": {
+    "X-API-Key": "${ASTRAL_MCP_KEY}"
+  },
+  "tools": [
+    "*"
+  ]
+}

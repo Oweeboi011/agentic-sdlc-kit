@@ -5,7 +5,7 @@ stage: 6
 triggers: [repository_dispatch:alert, label:incident, manual]
 skills: [incident-triage, release-runbook]
 tools: [read, search, execute]
-mcp: [azure, github]
+mcp: [azure, github, astral]
 permissions: {issues: write, contents: read, deployments: read, actions: read}
 human_gate: {mode: propose, reviewer: on-call engineer}
 evidence: {kind: issue_comment, label: "agent:sre", trigger: label:incident}

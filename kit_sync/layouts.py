@@ -62,9 +62,18 @@ def _body(agent: Doc) -> str:
 
 
 def _copilot_server(server: dict[str, Any]) -> dict[str, Any]:
-    """`${NAME}` env values become Copilot secrets, which must carry the COPILOT_MCP_ prefix."""
-    env = {k: _SECRET.sub(r"${{ secrets.COPILOT_MCP_\1 }}", v) for k, v in server.get("env", {}).items()}
-    return {**server, "env": env} if env else server
+    """`${NAME}` in url, env and headers become Copilot secrets, which need the COPILOT_MCP_ prefix."""
+
+    def secret(value: str) -> str:
+        return _SECRET.sub(r"${{ secrets.COPILOT_MCP_\1 }}", value)
+
+    out = dict(server)
+    if "url" in out:
+        out["url"] = secret(out["url"])
+    for key in ("env", "headers"):
+        if key in out:
+            out[key] = {k: secret(v) for k, v in out[key].items()}
+    return out
 
 
 def copilot_agent(agent: Doc, kit: Kit) -> tuple[str, str]:

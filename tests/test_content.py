@@ -29,7 +29,7 @@ def test_v01_content_counts():
     assert len(KIT.agents) == 7
     assert len(KIT.skills) == 9
     assert len(KIT.instructions) == 5
-    assert sorted(KIT.mcp) == ["azure", "github", "playwright"]
+    assert sorted(KIT.mcp) == ["astral", "azure", "github", "playwright"]
 
 
 def test_one_agent_per_stage_with_an_agent():
@@ -66,7 +66,11 @@ def test_mcp_servers_are_read_only_and_pinned():
     assert github["env"]["GITHUB_READ_ONLY"] == "1"
     assert "--read-only" in azure["args"]
     for server in KIT.mcp.values():
-        assert not any(arg.endswith("@latest") or arg.endswith(":latest") for arg in server["args"])
+        args = server.get("args", [])
+        assert not any(arg.endswith("@latest") or arg.endswith(":latest") for arg in args)
+    astral = KIT.mcp["astral"]  # ASTRAL MCP: read-only tools only, URL and key from secrets
+    assert astral["type"] == "http" and astral["url"] == "${ASTRAL_MCP_URL}"
+    assert astral["headers"] == {"X-API-Key": "${ASTRAL_MCP_KEY}"}
 
 
 def test_everything_renders_with_parseable_frontmatter():
@@ -83,7 +87,10 @@ def test_copilot_uses_builtin_github_and_maps_secrets_for_custom_servers():
     _, sre = copilot_agent(KIT.agents["sre"], KIT)
     meta, _ = split_frontmatter(sre)
     assert "github/*" in meta["tools"]
-    assert list(meta["mcp-servers"]) == ["azure"]
+    assert list(meta["mcp-servers"]) == ["azure", "astral"]
+    astral = meta["mcp-servers"]["astral"]
+    assert astral["url"] == "${{ secrets.COPILOT_MCP_ASTRAL_MCP_URL }}"
+    assert astral["headers"]["X-API-Key"] == "${{ secrets.COPILOT_MCP_ASTRAL_MCP_KEY }}"
     servers = {**KIT.mcp, "azure": {"env": {"T": "${TOKEN}"}}}
     custom = Kit(KIT.agents, KIT.skills, KIT.instructions, servers)
     meta, _ = split_frontmatter(copilot_agent(KIT.agents["sre"], custom)[1])

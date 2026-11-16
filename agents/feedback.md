@@ -5,7 +5,7 @@ stage: 8
 triggers: ["schedule:0 6 * * 1", manual]
 skills: [feedback-clustering, story-refinement]
 tools: [read, search]
-mcp: [github]
+mcp: [github, astral]
 permissions: {issues: write}
 human_gate: {mode: propose, reviewer: product owner}
 evidence: {kind: issue, label: "agent:feedback", trigger: "schedule:0 6 * * 1"}
