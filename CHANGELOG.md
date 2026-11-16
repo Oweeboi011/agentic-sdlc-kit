@@ -7,6 +7,7 @@ All notable changes to this kit. Format: [Keep a Changelog](https://keepachangel
 ### Added
 
 - `mcp/astral.json`: ASTRAL MCP (HTTP, read-only ASTRAL tools: projects, overview, agent health, feedback) for the `sre` and `feedback` agents. Set `ASTRAL_MCP_URL` (`https://<ASTRAL MCP host>/mcp`) and `ASTRAL_MCP_KEY` for Claude Code; Copilot reads them as `COPILOT_MCP_ASTRAL_MCP_URL` / `COPILOT_MCP_ASTRAL_MCP_KEY` secrets (url and headers now map like env).
+- `sre.yml` / `feedback.yml`: optional secrets `astral-mcp-url` + `astral-mcp-key` (starter passes repo secrets `ASTRAL_MCP_URL` / `ASTRAL_MCP_KEY`); when both are set the agent gets the `astral` tools via `--mcp-config` (placeholders only, the key stays in env).
 - Skeleton: README, licence, code owners, CI (ruff, pytest, actionlint), release workflow (moving major tag), `kit-sync` entry point.
 - JSON Schemas for agent frontmatter, skill frontmatter and a project's `.github/astral-kit.yml` (`schemas/`). Agents are propose-only (`human_gate.mode: propose`); skill names follow the [Agent Skills spec](https://agentskills.io/specification).
 - `kit-sync --validate [--kit DIR] [--project DIR]`: schema checks plus name/file match and references to skills, MCP servers and kit agents. Exits 1 on any problem. CI runs it on the kit.

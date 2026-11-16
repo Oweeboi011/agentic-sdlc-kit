@@ -181,3 +181,17 @@ def test_readme_documents_every_reusable_workflow():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     for name in REUSABLE:
         assert f"`{name}`" in readme, name
+
+
+@pytest.mark.parametrize("name", ["sre", "feedback"])
+def test_astral_mcp_is_optional_read_only_and_keeps_the_key_in_env(name):
+    workflow = load(name)
+    secrets = triggers(workflow)["workflow_call"]["secrets"]
+    assert not secrets["astral-mcp-url"]["required"] and not secrets["astral-mcp-key"]["required"]
+    args = next(s for s in steps(workflow) if s.get("id") == "args")
+    assert '[ -n "$ASTRAL_MCP_URL" ] && [ -n "$ASTRAL_MCP_KEY" ]' in args["run"]
+    assert '"X-API-Key": "${ASTRAL_MCP_KEY}"' in args["run"] and "mcp__astral" in args["run"]
+    action = next(s for s in steps(workflow) if s.get("uses", "").startswith("anthropics/claude-code-action"))
+    assert action["env"]["ASTRAL_MCP_KEY"] == "${{ secrets.astral-mcp-key }}"
+    starter = yaml.safe_load(STARTER.read_text(encoding="utf-8"))["jobs"][name]["secrets"]
+    assert starter["astral-mcp-key"] == "${{ secrets.ASTRAL_MCP_KEY }}"

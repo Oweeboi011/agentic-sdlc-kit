@@ -106,6 +106,8 @@ jobs:
       alert: ${{ github.event_name == 'repository_dispatch' && toJSON(github.event.client_payload) || '' }}
     secrets:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+      astral-mcp-url: ${{ secrets.ASTRAL_MCP_URL }}
+      astral-mcp-key: ${{ secrets.ASTRAL_MCP_KEY }}
 
   feedback:
     if: github.event_name == 'schedule' || inputs.agent == 'feedback'
@@ -116,6 +118,8 @@ jobs:
     uses: ava-innersource/agentic-sdlc-kit/.github/workflows/feedback.yml@v0
     secrets:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+      astral-mcp-url: ${{ secrets.ASTRAL_MCP_URL }}
+      astral-mcp-key: ${{ secrets.ASTRAL_MCP_KEY }}
 
   release:
     if: inputs.agent == 'release'
