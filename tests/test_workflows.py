@@ -152,6 +152,24 @@ def test_every_agent_output_gets_the_evidence_marker(name, agent):
     assert "since=$(date -u" in (WORKFLOWS / f"{name}.yml").read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize("name", list(AGENT_WORKFLOWS))
+def test_every_agent_run_reports_its_model_usage(name):
+    steps_ = list(steps(load(name)))
+    claude = [s for s in steps_ if str(s.get("uses", "")).startswith("anthropics/claude-code-action@")]
+    assert [s.get("id") for s in claude] == ["claude"]
+    evidence = next(s for s in steps_ if s.get("uses") == EVIDENCE)
+    assert evidence["with"]["execution-file"] == "${{ steps.claude.outputs.execution_file }}"
+
+
+def test_usage_marker_is_separate_from_the_evidence_marker():
+    action = yaml.safe_load(ACTION.read_text(encoding="utf-8"))
+    script = action["runs"]["steps"][0]["run"]
+    assert "agentic-sdlc-kit usage agent=" in script
+    assert 'select(type == "object" and .type == "result")' in script
+    assert action["inputs"]["execution-file"]["default"] == ""
+    assert "|| true)" in script  # an unreadable execution file never fails the step
+
+
 def test_evidence_action_takes_values_through_env_and_writes_the_marker():
     action = yaml.safe_load(ACTION.read_text(encoding="utf-8"))
     assert action["runs"]["using"] == "composite"

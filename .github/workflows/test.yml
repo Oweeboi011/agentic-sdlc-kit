@@ -125,6 +125,7 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+        id: claude
         env:
           ANTHROPIC_FOUNDRY_BASE_URL: ${{ inputs.foundry-base-url }}
           GH_TOKEN: ${{ steps.app.outputs.token || github.token }}
@@ -172,3 +173,4 @@ jobs:
           branch: ${{ env.BRANCH }}
           model: ${{ inputs.model }}
           token: ${{ steps.app.outputs.token || github.token }}
+          execution-file: ${{ steps.claude.outputs.execution_file }}

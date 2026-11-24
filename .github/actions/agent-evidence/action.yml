@@ -31,6 +31,9 @@ inputs:
   token:
     description: Token that can edit the output (the agent's token)
     required: true
+  execution-file:
+    description: Claude Code Action `execution_file` output; adds a usage marker (tokens, list-price cost)
+    default: ""
 outputs:
   count:
     description: Outputs marked
@@ -53,6 +56,7 @@ runs:
         BRANCH: ${{ inputs.branch }}
         FILTER: ${{ inputs.filter-label }}
         MODEL: ${{ inputs.model }}
+        EXEC: ${{ inputs.execution-file }}
       run: |
         set -euo pipefail
         if [ -z "$SINCE" ]; then
@@ -65,6 +69,17 @@ runs:
           [ -z "$v" ] || { kit="$v"; break; }
         done
         marker="<!-- agentic-sdlc-kit agent=$AGENT kit=$kit run=$GITHUB_RUN_ID model=${MODEL:-default} -->"
+        # Usage marker: a separate pattern, so evidence parsers are unchanged; never fails the step.
+        usage=""
+        if [ -n "$EXEC" ] && [ -f "$EXEC" ]; then
+          usage=$(jq -rs --arg a "$AGENT" --arg r "$GITHUB_RUN_ID" '
+            [.[] | if type == "array" then .[] else . end | select(type == "object" and .type == "result")]
+            | last // empty
+            | "<!-- agentic-sdlc-kit usage agent=\($a) run=\($r) input=\(.usage.input_tokens // 0)"
+              + " output=\(.usage.output_tokens // 0) cache_read=\(.usage.cache_read_input_tokens // 0)"
+              + " cache_write=\(.usage.cache_creation_input_tokens // 0) cost_usd=\(.total_cost_usd // 0)"
+              + " turns=\(.num_turns // 0) -->"' "$EXEC" 2>/dev/null || true)
+        fi
         recent='select(.user.type == "Bot" and .created_at >= env.SINCE)'
         row='[.number // .id, .html_url, ((.body // "") | @base64)] | @tsv'
         case "$KIND" in
@@ -88,7 +103,7 @@ runs:
           [ -n "$id" ] || continue
           body=$(base64 -d <<< "$body64")
           if [[ "$body" != *"agentic-sdlc-kit agent=$AGENT "*" run=$GITHUB_RUN_ID "* ]]; then
-            gh api -X PATCH "$edit/$id" -f body="${body}"$'\n\n'"${marker}" > /dev/null
+            gh api -X PATCH "$edit/$id" -f body="${body}"$'\n\n'"${marker}${usage:+$'\n'$usage}" > /dev/null
           fi
           if [ "$KIND" = pr ] || [ "$KIND" = issue ]; then
             gh api "repos/$repo/issues/$id/labels" -f "labels[]=$LABEL" > /dev/null
@@ -100,6 +115,7 @@ runs:
           echo "### Agent evidence: $AGENT"
           echo "Kind \`$KIND\`, kit \`$kit\`, model \`${MODEL:-default}\`, run \`$GITHUB_RUN_ID\`: $count output(s)."
           cat "$RUNNER_TEMP/evidence.md" 2>/dev/null || true
+          [ -z "$usage" ] || echo "Usage: \`${usage#<!-- agentic-sdlc-kit usage }\`"
         } >> "$GITHUB_STEP_SUMMARY"
         [ "$count" -gt 0 ] || echo "::warning::$AGENT produced no $KIND this run"
         echo "count=$count" >> "$GITHUB_OUTPUT"
