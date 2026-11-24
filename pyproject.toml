@@ -17,6 +17,7 @@ dev = ["pytest>=8", "ruff>=0.8"]
 [project.scripts]
 kit-sync = "kit_sync.cli:main"
 kit-canary = "kit_sync.canary:main"
+kit-decisions = "kit_sync.decisions:main"
 
 [tool.setuptools]
 packages = [

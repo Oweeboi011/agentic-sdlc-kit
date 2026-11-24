@@ -1,0 +1,53 @@
+# Reusable, ADR-0024 step 3: every `[NEEDS CLARIFICATION: …]` in specs/*/spec.md opens one `needs-decision`
+# Issue assigned to the spec's code owners; removing the marker closes it. Deterministic (`kit-decisions`),
+# no model. Callers grant `contents: read` and `issues: write`.
+name: spec-decisions
+on:
+  workflow_call:
+    inputs:
+      kit-version:
+        description: Kit tag to run (v0 or v0.1.0); empty reads `kit` from .github/astral-kit.yml
+        type: string
+        default: ""
+      kit-repository:
+        description: Kit repository (owner/name)
+        type: string
+        default: ava-innersource/agentic-sdlc-kit
+    secrets:
+      kit-token:
+        description: Read-only token for the kit repository, needed while it is not public
+        required: false
+permissions:
+  contents: read
+
+jobs:
+  decisions:
+    name: spec decisions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    concurrency:
+      group: spec-decisions
+      cancel-in-progress: false
+    env:
+      KIT_VERSION: ${{ inputs.kit-version }}
+      KIT_REPOSITORY: ${{ inputs.kit-repository }}
+      KIT_TOKEN: ${{ secrets.kit-token }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: kit-decisions
+        run: |
+          version="${KIT_VERSION:-$(yq -r '.kit // ""' .github/astral-kit.yml)}"
+          [ -n "$version" ] || { echo "::error::Set kit in .github/astral-kit.yml or the kit-version input"; exit 1; }
+          if [ -n "$KIT_TOKEN" ]; then
+            export GIT_CONFIG_COUNT=1 GIT_CONFIG_VALUE_0="https://github.com/"
+            export GIT_CONFIG_KEY_0="url.https://x-access-token:${KIT_TOKEN}@github.com/.insteadOf"
+          fi
+          pipx run --python python3 --spec "git+https://github.com/$KIT_REPOSITORY@$version" kit-decisions \
+            | tee -a "$GITHUB_STEP_SUMMARY"

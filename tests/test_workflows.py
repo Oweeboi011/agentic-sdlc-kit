@@ -35,6 +35,7 @@ REUSABLE = [
     "iac-validate",
     "kit-drift",
     "security",
+    "spec-decisions",
     *AGENT_WORKFLOWS,
 ]
 REVIEW_COMMANDS = ("gh pr merge", "gh pr review", "gh pr ready")

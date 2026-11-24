@@ -6,6 +6,7 @@ All notable changes to this kit. Format: [Keep a Changelog](https://keepachangel
 
 ### Added
 
+- `kit-decisions` + reusable `spec-decisions` workflow (ADR-0024 step 3): each `[NEEDS CLARIFICATION: …]` in `specs/*/spec.md` opens one `needs-decision` Issue for the spec's code owners (last matching CODEOWNERS rule; users assigned, teams and emails named), keyed by spec + question so edits elsewhere don't reopen it; removing the marker closes it. Only Issues it opened are closed. Starter `spec-decisions.yml` runs on pushes to `main` that change a spec. Azure DevOps routing stays in ASTRAL (ADR-0024 decision 7).
 - `mcp/astral.json`: ASTRAL MCP (HTTP, read-only ASTRAL tools: projects, overview, agent health, feedback) for the `sre` and `feedback` agents. Set `ASTRAL_MCP_URL` (`https://<ASTRAL MCP host>/mcp`) and `ASTRAL_MCP_KEY` for Claude Code; Copilot reads them as `COPILOT_MCP_ASTRAL_MCP_URL` / `COPILOT_MCP_ASTRAL_MCP_KEY` secrets (url and headers now map like env).
 - `sre.yml` / `feedback.yml`: optional secrets `astral-mcp-url` + `astral-mcp-key` (starter passes repo secrets `ASTRAL_MCP_URL` / `ASTRAL_MCP_KEY`); when both are set the agent gets the `astral` tools via `--mcp-config` (placeholders only, the key stays in env).
 - Skeleton: README, licence, code owners, CI (ruff, pytest, actionlint), release workflow (moving major tag), `kit-sync` entry point.

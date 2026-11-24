@@ -1,0 +1,17 @@
+# Spec questions (ADR-0024): each `[NEEDS CLARIFICATION: …]` merged into specs/*/spec.md opens a
+# `needs-decision` Issue for the spec's code owners; removing the marker closes it. No model, no secrets.
+name: Spec decisions
+on:
+  push:
+    branches: [main]
+    paths: ["specs/**/spec.md"]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  decisions:
+    permissions:
+      contents: read
+      issues: write
+    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/spec-decisions.yml@v0
