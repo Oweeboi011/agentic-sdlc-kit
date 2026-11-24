@@ -27,7 +27,7 @@ def test_kit_content_is_valid():
 
 def test_v01_content_counts():
     assert len(KIT.agents) == 7
-    assert len(KIT.skills) == 9
+    assert len(KIT.skills) == 10
     assert len(KIT.instructions) == 5
     assert sorted(KIT.mcp) == ["astral", "azure", "github", "playwright"]
 
@@ -76,7 +76,7 @@ def test_mcp_servers_are_read_only_and_pinned():
 def test_everything_renders_with_parseable_frontmatter():
     files = render(KIT, EVERYTHING)
     assert len([p for p in files if p.startswith(".github/agents/")]) == 7
-    assert len([p for p in files if p.startswith(".claude/skills/")]) == 9
+    assert len([p for p in files if p.startswith(".claude/skills/")]) == 10
     for path, text in files.items():
         if text.startswith("---\n"):
             meta, _ = split_frontmatter(text)

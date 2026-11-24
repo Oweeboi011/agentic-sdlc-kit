@@ -5,7 +5,7 @@ description: "Review a pull request for correctness, standards, tests, security 
 
 # PR review
 
-1. **Intent:** does the diff do what the linked issue asks, and nothing else?
+1. **Intent:** does the diff do what the linked issue asks, and nothing else? For a spec, use `spec-drift`.
 2. **Correctness:** edge cases, error paths, concurrency, data loss, backward compatibility.
 3. **Standards:** `coding-standards`, layer and folder rules, reuse of existing code, dead code, comment length.
 4. **Tests:** each changed behaviour is tested in the right layer (`test-patterns`); bug fixes include a regression test.

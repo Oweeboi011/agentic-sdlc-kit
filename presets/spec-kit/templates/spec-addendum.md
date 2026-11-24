@@ -24,4 +24,4 @@
 ## Traceability
 
 - Requirement IDs (FR-###, SC-###, NFR-###) go into the backlog item, the PR body ("Requirements:"), test names and release notes.
-- Every `[NEEDS CLARIFICATION: ...]` left after `clarify` becomes a backlog item labelled `needs-decision` for the spec's code owners. Build waits until they are decided.
+- Every `[NEEDS CLARIFICATION: ...]` left after `clarify` becomes a backlog item labelled `needs-decision` for the spec's code owners (the kit's `spec-decisions` workflow opens and closes them). Build waits until they are decided.
