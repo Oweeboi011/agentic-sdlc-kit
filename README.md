@@ -20,6 +20,20 @@ pipx run --spec git+https://github.com/Oweeboi011/agentic-sdlc-kit@v0 kit-sync -
 
 `v0` is a moving tag on the newest `v0.x.y` release. `--validate` checks the kit (and `--project` config) only.
 
+`kit-check` holds generic checks a project's harness can call (exit 1 on findings):
+
+```bash
+kit-check comments [paths…] [--max-block 6] [--max-docstring 12]   # long comment blocks, Python docstrings
+kit-check doc-links [paths…]                                        # relative Markdown links to missing files
+kit-check security-inbox [--repo owner/name]                        # open security alerts + Dependabot PRs (gh, local)
+```
+
+`kit-agent` runs a kit comment agent on Azure OpenAI (`planner` with `provider: azure-openai`). Its tools only read tracked files (never `.git/`), at most 8 rounds and 24 calls. The workflow reads the Issue and posts the answer, and the usage record feeds agent-evidence:
+
+```text
+kit-agent --agent planner --endpoint https://<resource>.openai.azure.com --model gpt-5.4 --prompt "…" --data-file issue.md --output comment.md --execution-file usage.json
+```
+
 ## What it renders
 
 | Kit source | Copilot | Claude Code |
@@ -56,6 +70,7 @@ jobs:
 | `iac-validate` | `az bicep build` + `az bicep lint`, no Azure sign-in | `templates` (one per line) | `contents: read` |
 | `deploy-aca` | OIDC sign-in, Bicep at RG scope (running images passed back in), build + push to ACR, roll Container Apps and Jobs, smoke test | `environment`, `images`, `parameters` (`${NAME}` / `${NAME:-default}` = the Environment's variable), `template`, `health-fqdn-output`, `health-path`; output `template-outputs` (JSON) | `contents: read`, `id-token: write` |
 | `e2e-playwright` | `npm ci`, browsers, build, test; HTML report uploaded on failure | `package-directory`, `build`, `test`, `browsers` | `contents: read` |
+| `hygiene` | `kit-check comments` (comment blocks > 6 lines, Python docstrings > 12) and `kit-check doc-links` (relative Markdown links to missing files), at the version pinned in `.github/astral-kit.yml` | `kit-version`, `comment-paths`, `max-comment-lines`, `max-docstring-lines` | `contents: read` |
 | `kit-drift` | `kit-sync --check` at the version pinned in `.github/astral-kit.yml` | `kit-version`; secret `kit-token` while the kit is not public | `contents: read` |
 | `spec-decisions` | `kit-decisions`: each `[NEEDS CLARIFICATION: …]` in `specs/*/spec.md` opens one `needs-decision` Issue assigned to the spec's code owners (users assigned, teams named); removing the marker closes it. No model ([ADR-0024](https://github.com/ava-innersource/icoe-astral-ai/blob/main/docs/adr/0024-SPEC-DRIVEN-DEVELOPMENT-SPEC-KIT.md) step 3) | `kit-version`; secret `kit-token` | `contents: read`, `issues: write` |
 
@@ -79,7 +94,7 @@ Propose-only agents on [Claude Code Action](https://github.com/anthropics/claude
 
 - **Propose-only by construction.** `claude-code` and `test` deny `gh pr merge`, `gh pr review`, `gh pr ready` and force pushes. A guard step runs after the agent: it turns a non-draft PR back into a draft. The default branch must carry `policies/ruleset-main.json`, so the agent can't push to it. Comment agents get an allow list with no edit tools.
 - **Evidence (ADR-0026).** Each agent's frontmatter declares `evidence` (`kind`, `label`, `trigger`). After the agent, `if: always()`, the workflow runs `.github/actions/agent-evidence`: it appends `<!-- agentic-sdlc-kit agent=<name> kit=<ver> run=<run_id> model=<model> -->` to every bot-authored output created during the run, puts the agent label on PRs and Issues, and writes the step summary and outputs `count` and `evidence-url`. The workflow, not the model, adds it, so prompt drift can't drop or forge it. ASTRAL reads the markers to show per agent whether it is installed, ran, produced its output and was accepted.
-- **Claude endpoint** (plan A-03): `provider: anthropic` with secret `anthropic-api-key`, or `provider: foundry` with `foundry-base-url`, `model` (the Foundry deployment) and an `environment` whose vars hold `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` (OIDC, no stored key).
+- **Claude endpoint** (plan A-03): `provider: anthropic` with secret `anthropic-api-key`, or `provider: foundry` with `foundry-base-url`, `model` (the Foundry deployment) and an `environment` whose vars hold `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` (OIDC, no stored key). Without Claude, `planner` also takes `provider: azure-openai` with `openai-endpoint`, `model` (e.g. `gpt-5.4`) and the same `environment` (`kit-agent`; no code-writing agent).
 - **CI on agent PRs needs a GitHub App** (ADR-0016): GitHub starts no workflows for pushes or PRs made with `GITHUB_TOKEN`. Pass secrets `app-id` and `app-private-key` to `claude-code` and `test`; they mint a short-lived App token (contents and pull requests write, issues read) for the push, the PR and the guard. Without them the draft PR opens but CI waits until a human pushes or re-runs it. The same applies to Issues the feedback agent opens: the planner starts on them only when a human re-applies `needs-refinement`.
 - Issue, PR and alert text is passed as data, never as instructions. The action only runs for actors with write access.
 - Toolchain for the gate (`claude-code`, `test`): `python-version`, `node-version`, `install` (as in `ci-python`).

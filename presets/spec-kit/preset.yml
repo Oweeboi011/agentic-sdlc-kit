@@ -2,7 +2,7 @@ schema_version: "1.0"
 preset:
   id: agentic-sdlc
   name: Agentic SDLC org preset
-  version: "0.2.0"
+  version: "0.3.0"
   description: >-
     Adds non-functional, security, data-handling and traceability sections to specs, and a constitution
     generated from the agentic SDLC kit's instructions (ADR-0024).

@@ -1,0 +1,57 @@
+# Reusable: `kit-check comments` (long comment blocks and docstrings) and `kit-check doc-links`
+# (relative Markdown links to missing files). Kit version = `kit` in .github/astral-kit.yml unless set.
+name: hygiene
+on:
+  workflow_call:
+    inputs:
+      kit-version:
+        description: Kit tag to run (v0 or v0.3.0); empty reads `kit` from .github/astral-kit.yml
+        type: string
+        default: ""
+      kit-repository:
+        description: Kit repository (owner/name)
+        type: string
+        default: Oweeboi011/agentic-sdlc-kit
+      comment-paths:
+        description: Space-separated files or folders for the comment check; empty = all tracked sources
+        type: string
+        default: ""
+      max-comment-lines:
+        description: Longest comment block allowed (lines)
+        type: number
+        default: 6
+      max-docstring-lines:
+        description: Longest Python docstring allowed (lines)
+        type: number
+        default: 12
+permissions:
+  contents: read
+
+jobs:
+  hygiene:
+    name: hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      KIT_VERSION: ${{ inputs.kit-version }}
+      KIT_REPOSITORY: ${{ inputs.kit-repository }}
+      COMMENT_PATHS: ${{ inputs.comment-paths }}
+      MAX_BLOCK: ${{ inputs.max-comment-lines }}
+      MAX_DOCSTRING: ${{ inputs.max-docstring-lines }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install kit-check
+        run: |
+          version="${KIT_VERSION:-$(yq -r '.kit // ""' .github/astral-kit.yml)}"
+          [ -n "$version" ] || { echo "::error::Set kit in .github/astral-kit.yml or the kit-version input"; exit 1; }
+          python -m pip install -q "git+https://github.com/$KIT_REPOSITORY@$version"
+      - name: Long comments
+        run: |
+          read -r -a paths <<< "$COMMENT_PATHS"
+          kit-check comments --max-block "$MAX_BLOCK" --max-docstring "$MAX_DOCSTRING" "${paths[@]}"
+      - name: Doc links
+        if: always()
+        run: kit-check doc-links

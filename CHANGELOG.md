@@ -4,6 +4,14 @@ All notable changes to this kit. Format: [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-25
+
+### Added
+
+- `kit-check` (generic repo checks a project's harness can call): `comments` flags comment blocks over `--max-block` (6) lines and Python docstrings over `--max-docstring` (12), skipping tests, `node_modules`, `.venv`, `dist`, `build`; `doc-links` flags relative Markdown links to missing files; `security-inbox` lists open Dependabot, code scanning and secret scanning alerts and Dependabot PRs via `gh` (needs security read access, so it runs locally, not in CI). Each exits 1 on findings. Moved from ASTRAL's harness (kit plan decision, ASTRAL #200).
+- `kit-agent` and `planner` `provider: azure-openai`: the planner runs on an Azure OpenAI deployment (e.g. `gpt-5.4`) with GitHub OIDC, no Claude needed. The model has read-only tools over tracked files (no `.git/`, 8 rounds, 24 calls); the workflow reads the Issue, posts the answer, and writes the usage marker as for Claude. The planner checkout no longer persists credentials.
+- Reusable `hygiene` workflow: `kit-check comments` + `kit-check doc-links` at the project's pinned kit version. The kit's CI runs both on itself.
+
 ## [0.2.0] - 2026-11-25
 
 ### Added
