@@ -36,6 +36,7 @@ REUSABLE = [
     "ci-python",
     "deploy-aca",
     "e2e-playwright",
+    "hygiene",
     "iac-validate",
     "kit-drift",
     "security",

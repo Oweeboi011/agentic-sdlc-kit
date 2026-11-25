@@ -20,6 +20,14 @@ pipx run --spec git+https://github.com/Oweeboi011/agentic-sdlc-kit@v0 kit-sync -
 
 `v0` is a moving tag on the newest `v0.x.y` release. `--validate` checks the kit (and `--project` config) only.
 
+`kit-check` holds generic checks a project's harness can call (exit 1 on findings):
+
+```bash
+kit-check comments [paths…] [--max-block 6] [--max-docstring 12]   # long comment blocks, Python docstrings
+kit-check doc-links [paths…]                                        # relative Markdown links to missing files
+kit-check security-inbox [--repo owner/name]                        # open security alerts + Dependabot PRs (gh, local)
+```
+
 ## What it renders
 
 | Kit source | Copilot | Claude Code |
@@ -56,6 +64,7 @@ jobs:
 | `iac-validate` | `az bicep build` + `az bicep lint`, no Azure sign-in | `templates` (one per line) | `contents: read` |
 | `deploy-aca` | OIDC sign-in, Bicep at RG scope (running images passed back in), build + push to ACR, roll Container Apps and Jobs, smoke test | `environment`, `images`, `parameters` (`${NAME}` / `${NAME:-default}` = the Environment's variable), `template`, `health-fqdn-output`, `health-path`; output `template-outputs` (JSON) | `contents: read`, `id-token: write` |
 | `e2e-playwright` | `npm ci`, browsers, build, test; HTML report uploaded on failure | `package-directory`, `build`, `test`, `browsers` | `contents: read` |
+| `hygiene` | `kit-check comments` (comment blocks > 6 lines, Python docstrings > 12) and `kit-check doc-links` (relative Markdown links to missing files), at the version pinned in `.github/astral-kit.yml` | `kit-version`, `comment-paths`, `max-comment-lines`, `max-docstring-lines` | `contents: read` |
 | `kit-drift` | `kit-sync --check` at the version pinned in `.github/astral-kit.yml` | `kit-version`; secret `kit-token` while the kit is not public | `contents: read` |
 | `spec-decisions` | `kit-decisions`: each `[NEEDS CLARIFICATION: …]` in `specs/*/spec.md` opens one `needs-decision` Issue assigned to the spec's code owners (users assigned, teams named); removing the marker closes it. No model ([ADR-0024](https://github.com/ava-innersource/icoe-astral-ai/blob/main/docs/adr/0024-SPEC-DRIVEN-DEVELOPMENT-SPEC-KIT.md) step 3) | `kit-version`; secret `kit-token` | `contents: read`, `issues: write` |
 

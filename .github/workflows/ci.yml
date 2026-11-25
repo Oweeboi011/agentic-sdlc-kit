@@ -29,6 +29,8 @@ jobs:
         python -m pytest -q
         kit-sync --version
         kit-sync --validate
+        kit-check comments
+        kit-check doc-links
       timeout-minutes: 10
 
   security:

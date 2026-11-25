@@ -4,6 +4,11 @@ All notable changes to this kit. Format: [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+### Added
+
+- `kit-check` (generic repo checks a project's harness can call): `comments` flags comment blocks over `--max-block` (6) lines and Python docstrings over `--max-docstring` (12), skipping tests, `node_modules`, `.venv`, `dist`, `build`; `doc-links` flags relative Markdown links to missing files; `security-inbox` lists open Dependabot, code scanning and secret scanning alerts and Dependabot PRs via `gh` (needs security read access, so it runs locally, not in CI). Each exits 1 on findings. Moved from ASTRAL's harness (kit plan decision, ASTRAL #200).
+- Reusable `hygiene` workflow: `kit-check comments` + `kit-check doc-links` at the project's pinned kit version. The kit's CI runs both on itself.
+
 ## [0.2.0] - 2026-11-25
 
 ### Added
