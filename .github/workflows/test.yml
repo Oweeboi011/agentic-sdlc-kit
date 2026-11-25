@@ -163,7 +163,7 @@ jobs:
             [ -z "$number" ] || gh pr comment "$number" --body "The test agent may only add tests; it changed: $changed"
             exit 1
           fi
-      - uses: ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0
+      - uses: Oweeboi011/agentic-sdlc-kit/.github/actions/agent-evidence@v0
         if: always()
         with:
           agent: test

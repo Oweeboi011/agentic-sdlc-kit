@@ -23,7 +23,7 @@ AGENT_WORKFLOWS = {
 }
 COMMENT_AGENTS = ["feedback", "planner", "review", "sre"]
 PR_AGENTS = ["claude-code", "test"]
-EVIDENCE = "ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0"
+EVIDENCE = "Oweeboi011/agentic-sdlc-kit/.github/actions/agent-evidence@v0"
 ACTION = ROOT / ".github" / "actions" / "agent-evidence" / "action.yml"
 STARTER = ROOT / "templates" / "starters" / "github" / "workflows" / "agents.yml"
 REUSABLE = [

@@ -149,7 +149,7 @@ jobs:
             gh pr ready "$number" --undo
             echo "::warning::PR #$number was not a draft; converted back to draft."
           fi
-      - uses: ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0
+      - uses: Oweeboi011/agentic-sdlc-kit/.github/actions/agent-evidence@v0
         if: always()
         with:
           agent: coding

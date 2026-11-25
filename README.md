@@ -13,9 +13,9 @@ v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3)
 From the project root, with a `.github/astral-kit.yml`:
 
 ```bash
-pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync           # render
-pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync --check   # CI: exit 1 on drift
-pipx run --spec git+https://github.com/ava-innersource/agentic-sdlc-kit@v0 kit-sync --init    # render + write missing starters
+pipx run --spec git+https://github.com/Oweeboi011/agentic-sdlc-kit@v0 kit-sync           # render
+pipx run --spec git+https://github.com/Oweeboi011/agentic-sdlc-kit@v0 kit-sync --check   # CI: exit 1 on drift
+pipx run --spec git+https://github.com/Oweeboi011/agentic-sdlc-kit@v0 kit-sync --init    # render + write missing starters
 ```
 
 `v0` is a moving tag on the newest `v0.x.y` release. `--validate` checks the kit (and `--project` config) only.
@@ -42,7 +42,7 @@ Call them from the project's own workflows, pinned to the kit's major tag:
 ```yaml
 jobs:
   backend:
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/ci-python.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/ci-python.yml@v0
     with:
       install: pip install -r requirements.txt -r requirements-dev.txt
       gate: python tools/harness.py ci   # the `gate` from .github/astral-kit.yml

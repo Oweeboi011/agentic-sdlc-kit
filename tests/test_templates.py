@@ -137,7 +137,7 @@ def test_init_writes_starters_once_and_keeps_project_files(project, capsys):
 def test_starter_workflows_use_pinned_kit_workflows():
     for path in (KIT_ROOT / "templates/starters/github/workflows").glob("*.yml"):
         for line in path.read_text(encoding="utf-8").splitlines():
-            if "uses: ava-innersource/agentic-sdlc-kit/" in line:
+            if "uses: Oweeboi011/agentic-sdlc-kit/" in line:
                 assert line.rstrip().endswith("@v0"), line
 
 

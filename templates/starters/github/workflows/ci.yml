@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   gate:
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/ci-python.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/ci-python.yml@v0
     with:
       install: ""
       gate: |
@@ -24,10 +24,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/security.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/security.yml@v0
 
   kit-drift:
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/kit-drift.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/kit-drift.yml@v0
     # While the kit repo is not public: a read-only token for it, stored as a repo secret.
     # secrets:
     #   kit-token: ${{ secrets.KIT_TOKEN }}

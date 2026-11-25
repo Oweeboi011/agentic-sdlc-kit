@@ -7,7 +7,7 @@ preset:
     Adds non-functional, security, data-handling and traceability sections to specs, and a constitution
     generated from the agentic SDLC kit's instructions (ADR-0024).
   author: Avanade CoE AI Governance Practice
-  repository: https://github.com/ava-innersource/agentic-sdlc-kit
+  repository: https://github.com/Oweeboi011/agentic-sdlc-kit
   license: MIT
 requires:
   speckit_version: "~=1.4.0"

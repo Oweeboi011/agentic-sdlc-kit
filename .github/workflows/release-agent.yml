@@ -98,7 +98,7 @@ jobs:
             --jq '.[] | select((.draft | not) and .created_at >= env.SINCE) | .tag_name')
           for tag in $published; do gh release edit "$tag" --draft=true; done
           [ -z "$published" ] || { echo "::error::Release agent published $published; turned back into drafts"; exit 1; }
-      - uses: ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0
+      - uses: Oweeboi011/agentic-sdlc-kit/.github/actions/agent-evidence@v0
         if: always()
         with:
           agent: release

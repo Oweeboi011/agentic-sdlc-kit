@@ -12,7 +12,7 @@ Requires Spec Kit `~=1.4.0` (pinned; upgrades ship as kit releases).
 ```bash
 uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.4.0
 specify init --here                                   # once per project
-specify preset add --from https://github.com/ava-innersource/agentic-sdlc-kit/releases/download/v0.1.0/spec-kit-preset.zip
+specify preset add --from https://github.com/Oweeboi011/agentic-sdlc-kit/releases/download/v0.1.0/spec-kit-preset.zip
 specify preset resolve spec-template                  # shows the preset in effect
 ```
 

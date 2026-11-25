@@ -36,7 +36,7 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/planner.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/planner.yml@v0
     with:
       issue: ${{ github.event.issue.number || inputs.number }}
     secrets:
@@ -50,7 +50,7 @@ jobs:
       pull-requests: write
       issues: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/claude-code.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/claude-code.yml@v0
     with:
       issue: ${{ github.event.issue.number || inputs.number }}
     secrets:
@@ -68,7 +68,7 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/review.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/review.yml@v0
     with:
       pr: ${{ github.event.pull_request.number || inputs.number }}
     secrets:
@@ -84,7 +84,7 @@ jobs:
       pull-requests: write
       issues: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/test.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/test.yml@v0
     with:
       number: ${{ github.event.issue.number || github.event.pull_request.number || inputs.number }}
     secrets:
@@ -100,7 +100,7 @@ jobs:
       actions: read
       deployments: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/sre.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/sre.yml@v0
     with:
       issue: ${{ github.event.issue.number || inputs.number || 0 }}
       alert: ${{ github.event_name == 'repository_dispatch' && toJSON(github.event.client_payload) || '' }}
@@ -115,7 +115,7 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/feedback.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/feedback.yml@v0
     secrets:
       anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
       astral-mcp-url: ${{ secrets.ASTRAL_MCP_URL }}
@@ -128,7 +128,7 @@ jobs:
       pull-requests: read
       deployments: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/release-agent.yml@v0
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/release-agent.yml@v0
     with:
       tag: ${{ inputs.tag }}
     secrets:

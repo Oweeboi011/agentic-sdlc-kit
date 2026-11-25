@@ -11,7 +11,7 @@ on:
       kit-repository:
         description: Kit repository (owner/name)
         type: string
-        default: ava-innersource/agentic-sdlc-kit
+        default: Oweeboi011/agentic-sdlc-kit
     secrets:
       kit-token:
         description: Read-only token for the kit repository, needed while it is not public

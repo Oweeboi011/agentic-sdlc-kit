@@ -85,7 +85,7 @@ jobs:
             Post exactly one comment (`gh pr comment ${{ env.PR }} --body-file <file>`). Its first line is
             `**Verdict:** ready` or `**Verdict:** needs changes`; then findings ranked high, medium, low, each with
             `file:line`, the problem and a suggested fix. Never approve, request changes, merge or push.
-      - uses: ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0
+      - uses: Oweeboi011/agentic-sdlc-kit/.github/actions/agent-evidence@v0
         if: always()
         with:
           agent: review

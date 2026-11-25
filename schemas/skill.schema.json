@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ava-innersource/agentic-sdlc-kit/schemas/skill.schema.json",
+  "$id": "https://github.com/Oweeboi011/agentic-sdlc-kit/schemas/skill.schema.json",
   "title": "Skill frontmatter (skills/<name>/SKILL.md)",
   "type": "object",
   "additionalProperties": false,

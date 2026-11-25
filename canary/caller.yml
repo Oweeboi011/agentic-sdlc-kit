@@ -30,7 +30,7 @@ jobs:
       checks: read
       deployments: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/canary.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/canary.yml@main
     with:
       kit-ref: ${{ github.event.client_payload.sha || inputs.kit-ref || 'main' }}
     secrets:

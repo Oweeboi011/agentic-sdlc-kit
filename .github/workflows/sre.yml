@@ -122,7 +122,7 @@ jobs:
             Post exactly one comment (`gh issue comment ${{ steps.incident.outputs.number }} --body-file <file>`) with impact,
             timeline, each KQL query in a ```kql block with its result, the probable cause, and a proposed mitigation or
             rollback for the on-call engineer. Never restart, scale, roll back, deploy or change configuration.
-      - uses: ava-innersource/agentic-sdlc-kit/.github/actions/agent-evidence@v0
+      - uses: Oweeboi011/agentic-sdlc-kit/.github/actions/agent-evidence@v0
         if: always()
         with:
           agent: sre

@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
         with:
-          repository: ava-innersource/agentic-sdlc-kit
+          repository: Oweeboi011/agentic-sdlc-kit
           ref: ${{ inputs.kit-ref }}
           path: .kit
       - uses: actions/setup-python@v7
@@ -82,7 +82,7 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/planner.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/planner.yml@main
     with:
       issue: ${{ fromJSON(needs.seed.outputs.planner) }}
       provider: ${{ inputs.provider }}
@@ -96,7 +96,7 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/review.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/review.yml@main
     with:
       pr: ${{ fromJSON(needs.seed.outputs.review) }}
       provider: ${{ inputs.provider }}
@@ -111,7 +111,7 @@ jobs:
       pull-requests: write
       issues: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/claude-code.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/claude-code.yml@main
     with:
       issue: ${{ fromJSON(needs.seed.outputs.coding) }}
       provider: ${{ inputs.provider }}
@@ -130,7 +130,7 @@ jobs:
       pull-requests: write
       issues: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/test.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/test.yml@main
     with:
       number: ${{ fromJSON(needs.seed.outputs.test) }}
       provider: ${{ inputs.provider }}
@@ -150,7 +150,7 @@ jobs:
       actions: read
       deployments: read
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/sre.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/sre.yml@main
     with:
       alert: ${{ needs.seed.outputs.alert }}
       provider: ${{ inputs.provider }}
@@ -164,7 +164,7 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: ava-innersource/agentic-sdlc-kit/.github/workflows/feedback.yml@main
+    uses: Oweeboi011/agentic-sdlc-kit/.github/workflows/feedback.yml@main
     with:
       days: 1
       provider: ${{ inputs.provider }}
@@ -196,7 +196,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/checkout@v7
         with:
-          repository: ava-innersource/agentic-sdlc-kit
+          repository: Oweeboi011/agentic-sdlc-kit
           ref: ${{ needs.seed.outputs.kit-sha }}
           path: .kit
       - uses: actions/setup-python@v7
@@ -238,7 +238,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          repository: ava-innersource/agentic-sdlc-kit
+          repository: Oweeboi011/agentic-sdlc-kit
           ref: ${{ needs.seed.outputs.kit-sha }}
           path: .kit
       - uses: actions/setup-python@v7
