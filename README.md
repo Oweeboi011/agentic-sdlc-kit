@@ -6,7 +6,7 @@ Design: [ADR-0014](https://github.com/ava-innersource/icoe-astral-ai/blob/main/d
 
 ## Status
 
-v0.1 in progress. Done: skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 10 skills, 5 instructions, 4 MCP templates), reusable workflows (K5), agent workflows (K6), templates, policies and the Spec Kit preset (K7), sample project with CI checks E1–E3 (K8). Next: tag `v0.1.0` once this repo is on GitHub and CI is green.
+v0.1.0 (2026-11-25): skeleton (K1), schemas and validator (K2), renderer (K3), content (K4: 7 agents, 10 skills, 5 instructions, 4 MCP templates), reusable workflows (K5), agent workflows (K6), templates, policies and the Spec Kit preset (K7), sample project with CI checks E1–E3 (K8). Hosted at `Oweeboi011/agentic-sdlc-kit` (private) until `ava-innersource/agentic-sdlc-kit` exists: private-kit workflows are callable only from repos with the same owner.
 
 ## Use
 

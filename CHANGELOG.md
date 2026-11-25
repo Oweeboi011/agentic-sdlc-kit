@@ -4,6 +4,8 @@ All notable changes to this kit. Format: [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-25
+
 ### Added
 
 - Model usage per agent run (ASTRAL spec 013): `agent-evidence` takes `execution-file` (Claude Code Action's `execution_file`) and appends `<!-- agentic-sdlc-kit usage agent= run= input= output= cache_read= cache_write= cost_usd= turns= -->` next to the evidence marker, plus a step-summary line. Separate pattern, so evidence parsers are unchanged; a missing or unreadable file adds nothing. All 7 agent workflows pass it (`id: claude`). Cost is the provider's list-price estimate.
