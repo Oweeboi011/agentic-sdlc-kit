@@ -78,9 +78,11 @@ jobs:
           fi
           args="${mcp:-}--allowedTools \"$tools\""
           [ -z "$MODEL" ] || args="--model $MODEL $args"
-          echo "claude=$args" >> "$GITHUB_OUTPUT"
-          echo "since=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-          echo "from=$(date -u -d "-$DAYS days" +%F)" >> "$GITHUB_OUTPUT"
+          {
+            echo "claude=$args"
+            echo "since=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "from=$(date -u -d "-$DAYS days" +%F)"
+          } >> "$GITHUB_OUTPUT"
       - uses: azure/login@v3
         if: inputs.provider == 'foundry'
         with:

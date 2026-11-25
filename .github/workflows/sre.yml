@@ -90,6 +90,8 @@ jobs:
           title="Incident: $rule"
           number=$(gh issue list --label incident --state open --search "in:title \"$title\"" --json number -q '.[0].number')
           if [ -z "$number" ]; then
+            # Literal Markdown fence, not an expansion.
+            # shellcheck disable=SC2016
             printf 'Opened by the SRE agent workflow from an alert.\n\n```json\n%s\n```\n' "$ALERT" > body.md
             url=$(gh issue create --title "$title" --label incident --label "agent:sre" --body-file body.md)
             number=${url##*/}
