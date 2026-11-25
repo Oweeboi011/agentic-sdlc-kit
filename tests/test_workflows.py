@@ -163,7 +163,20 @@ def test_every_agent_run_reports_its_model_usage(name):
     claude = [s for s in steps_ if str(s.get("uses", "")).startswith("anthropics/claude-code-action@")]
     assert [s.get("id") for s in claude] == ["claude"]
     evidence = next(s for s in steps_ if s.get("uses") == EVIDENCE)
-    assert evidence["with"]["execution-file"] == "${{ steps.claude.outputs.execution_file }}"
+    usage = "steps.claude.outputs.execution_file"
+    if any(s.get("id") == "gpt" for s in steps_):
+        usage += " || steps.gpt.outputs.execution_file"
+    assert evidence["with"]["execution-file"] == f"${{{{ {usage} }}}}"
+
+
+def test_azure_openai_planner_runs_kit_agent_and_the_workflow_posts():
+    steps_ = {s.get("id"): s for s in steps(load("planner"))}
+    assert steps_["claude"]["if"] == "inputs.provider != 'azure-openai'"
+    gpt = steps_["gpt"]
+    assert gpt["if"] == "inputs.provider == 'azure-openai'"
+    assert "kit-agent --agent planner" in gpt["run"] and 'gh issue comment "$ISSUE" --body-file' in gpt["run"]
+    checkout = next(s for s in steps(load("planner")) if s.get("uses", "").startswith("actions/checkout@"))
+    assert checkout["with"]["persist-credentials"] is False
 
 
 def test_usage_marker_is_separate_from_the_evidence_marker():

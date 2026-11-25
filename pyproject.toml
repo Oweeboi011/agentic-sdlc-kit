@@ -19,6 +19,7 @@ kit-sync = "kit_sync.cli:main"
 kit-canary = "kit_sync.canary:main"
 kit-decisions = "kit_sync.decisions:main"
 kit-check = "kit_sync.checks:main"
+kit-agent = "kit_sync.agent:main"
 
 [tool.setuptools]
 packages = [

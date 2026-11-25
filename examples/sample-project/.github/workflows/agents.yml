@@ -2,6 +2,7 @@
 # review comment, `agent:tests` -> draft test PR, `incident` or an `alert` dispatch -> SRE triage comment,
 # Monday 06:00 UTC -> feedback themes, by hand -> draft release. Each output carries the kit evidence marker.
 # Needs a Claude endpoint: secret ANTHROPIC_API_KEY, or provider foundry + an Environment with Azure OIDC vars.
+# planner also runs without Claude: provider azure-openai + openai-endpoint + model (kit-agent).
 name: Agents
 on:
   issues:
