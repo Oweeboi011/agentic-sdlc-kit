@@ -4,6 +4,12 @@ All notable changes to this kit. Format: [Keep a Changelog](https://keepachangel
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-25
+
+### Added
+
+- `deploy-aca`: `parameters` lines may use `${NAME}` or `${NAME:-default}` for the GitHub Environment's variables, since a caller's `with:` can't read them. They're expanded without a shell. New output `template-outputs` (the Bicep outputs as JSON) for later jobs, such as a static site deploy.
+
 ## [0.1.0] - 2026-11-25
 
 ### Added

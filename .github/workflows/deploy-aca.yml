@@ -23,7 +23,9 @@ on:
         type: string
         default: main
       parameters:
-        description: Extra template parameters, one `name=value` per line
+        description: >-
+          Extra template parameters, one `name=value` per line. `${NAME}` or `${NAME:-default}` reads the
+          GitHub Environment's variable NAME (callers can't pass Environment variables in `with:`)
         type: string
         default: ""
       images:
@@ -45,6 +47,10 @@ on:
         description: Path that must answer 2xx within 5 minutes
         type: string
         default: /health
+    outputs:
+      template-outputs:
+        description: "The Bicep deployment's outputs as JSON (`{name: {type, value}}`), for later jobs"
+        value: ${{ jobs.deploy.outputs.template-outputs }}
 permissions:
   contents: read
   id-token: write
@@ -55,6 +61,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     timeout-minutes: 45
+    outputs:
+      template-outputs: ${{ steps.provision.outputs.json }}
     concurrency:
       group: deploy-${{ inputs.environment }}
       cancel-in-progress: false
@@ -95,6 +103,9 @@ jobs:
 
       # Re-provisioning must not reset apps to a placeholder: pass each app's running image back in.
       - name: Provision infra (Bicep), keeping running images
+        id: provision
+        env:
+          ENV_VARS: ${{ toJSON(vars) }}
         run: |
           placeholder=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest
           previous=$(az deployment group show -g "$RG" -n "$DEPLOYMENT" --query properties.outputs -o json 2>/dev/null || echo '{}')
@@ -106,11 +117,22 @@ jobs:
             [ -z "$app" ] || image=$(az containerapp show -g "$RG" -n "$app" --query 'properties.template.containers[0].image' -o tsv 2>/dev/null || true)
             params+=("$param=${image:-$placeholder}")
           done <<< "$IMAGES"
+          # ${NAME} / ${NAME:-default} -> the Environment's variable; the shell never evaluates values.
+          expanded=$(python3 - <<'PY'
+          import json, os, re
+          names = json.loads(os.environ.get("ENV_VARS") or "{}")
+          ref = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
+          for line in os.environ.get("PARAMETERS", "").splitlines():
+              if line.strip():
+                  print(ref.sub(lambda m: names.get(m[1]) or (m[2] or ""), line.strip()))
+          PY
+          )
           while IFS= read -r line; do
             [ -z "$line" ] || params+=("$line")
-          done <<< "$PARAMETERS"
+          done <<< "$expanded"
           az deployment group create -g "$RG" -n "$DEPLOYMENT" -f "$TEMPLATE" -p "${params[@]}" \
             --query properties.outputs -o json > "$RUNNER_TEMP/outputs.json"
+          echo "json=$(jq -c . "$RUNNER_TEMP/outputs.json")" >> "$GITHUB_OUTPUT"
 
       - name: Build, push and roll images
         run: |
