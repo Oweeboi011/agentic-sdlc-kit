@@ -1,6 +1,10 @@
 """Reusable workflows (K5): callable only, documented inputs, values reach scripts via env, propose-only."""
 
+import json
+import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -214,3 +218,32 @@ def test_astral_mcp_is_optional_read_only_and_keeps_the_key_in_env(name):
     assert action["env"]["ASTRAL_MCP_KEY"] == "${{ secrets.astral-mcp-key }}"
     starter = yaml.safe_load(STARTER.read_text(encoding="utf-8"))["jobs"][name]["secrets"]
     assert starter["astral-mcp-key"] == "${{ secrets.ASTRAL_MCP_KEY }}"
+
+
+def _deploy_parameter_expander() -> str:
+    run = next(s for s in steps(load("deploy-aca")) if s.get("id") == "provision")["run"]
+    return run.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        ("authClientId=${AUTH_ID}", "authClientId=abc"),
+        ("mode=${MISSING:-Disabled}", "mode=Disabled"),
+        ("emails=${EMPTY:-[]}", "emails=[]"),
+        ("blank=${MISSING}", "blank="),
+        ("shell=$(touch pwned) `id` $HOME", "shell=$(touch pwned) `id` $HOME"),
+    ],
+)
+def test_deploy_parameters_read_environment_variables_without_a_shell(line, expected):
+    env = {"ENV_VARS": json.dumps({"AUTH_ID": "abc", "EMPTY": ""}), "PARAMETERS": f"{line}\n\n"}
+    out = subprocess.run([sys.executable, "-c", _deploy_parameter_expander()], env={**os.environ, **env},
+                         capture_output=True, text=True, check=True).stdout  # fmt: skip
+    assert out.splitlines() == [expected]
+
+
+def test_deploy_returns_the_template_outputs_for_later_jobs():
+    workflow = load("deploy-aca")
+    output = triggers(workflow)["workflow_call"]["outputs"]["template-outputs"]
+    assert output["value"] == "${{ jobs.deploy.outputs.template-outputs }}"
+    assert workflow["jobs"]["deploy"]["outputs"]["template-outputs"] == "${{ steps.provision.outputs.json }}"
